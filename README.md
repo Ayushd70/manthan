@@ -220,7 +220,8 @@ format + analyze + tests plus Android & desktop builds.
 - [ ] Prompt library & saved system prompts
 - [ ] Encrypted-at-rest storage for chats & documents
 
-See [open issues](https://github.com/Ayushd70/manthan/issues) for the latest.
+See the detailed [roadmap](docs/ROADMAP.md) and
+[open issues](https://github.com/Ayushd70/manthan/issues) for the latest.
 
 ## 🤝 Contributing
 

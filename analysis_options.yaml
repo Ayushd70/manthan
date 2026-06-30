@@ -1,0 +1,21 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "lib/objectbox.g.dart"
+    - "objectbox-model.json"
+    - "build/**"
+  errors:
+    # Generated/known-noise rules relaxed to keep CI signal high.
+    todo: ignore
+
+linter:
+  rules:
+    # The README and docs carry intent; we don't require API doc comments
+    # on every public member for an application (vs. a published package).
+    public_member_api_docs: false
+    # Relative imports within lib keep the feature-first tree tidy.
+    always_use_package_imports: false
+    lines_longer_than_80_chars: false

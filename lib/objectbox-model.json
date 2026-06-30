@@ -1,0 +1,211 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:8391671496175655486",
+      "lastPropertyId": "10:7861131642230725959",
+      "name": "ChatMessageEntity",
+      "properties": [
+        {
+          "id": "1:2841426103552996392",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2975967615352850483",
+          "name": "uid",
+          "indexId": "1:3801383480029372979",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:7644333723105730567",
+          "name": "sessionUid",
+          "indexId": "2:6478544627068125264",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "4:7339822036909310463",
+          "name": "role",
+          "type": 6
+        },
+        {
+          "id": "5:3794031208515975966",
+          "name": "text",
+          "type": 9
+        },
+        {
+          "id": "6:537810365922357671",
+          "name": "createdAtMs",
+          "type": 6
+        },
+        {
+          "id": "7:3945458223616750074",
+          "name": "isError",
+          "type": 1
+        },
+        {
+          "id": "8:3353703858846201118",
+          "name": "tokensPerSecond",
+          "type": 8
+        },
+        {
+          "id": "9:4298534767562036922",
+          "name": "tokenCount",
+          "type": 6
+        },
+        {
+          "id": "10:7861131642230725959",
+          "name": "imageCount",
+          "type": 6
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "2:3201799367816915788",
+      "lastPropertyId": "7:4458983417333157433",
+      "name": "ChatSessionEntity",
+      "properties": [
+        {
+          "id": "1:1594641100200847261",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8461977039110798442",
+          "name": "uid",
+          "indexId": "3:7685751008322254409",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:7646152683560138839",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "4:2565502705951999716",
+          "name": "createdAtMs",
+          "type": 6
+        },
+        {
+          "id": "5:7826623270672197767",
+          "name": "updatedAtMs",
+          "type": 6
+        },
+        {
+          "id": "6:8945018659857374546",
+          "name": "modelId",
+          "type": 9
+        },
+        {
+          "id": "7:4458983417333157433",
+          "name": "documentScoped",
+          "type": 1
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:4948270154292050868",
+      "lastPropertyId": "6:7667178551622631131",
+      "name": "DocumentChunkEntity",
+      "properties": [
+        {
+          "id": "1:4358798190791644008",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3856476292171087034",
+          "name": "documentUid",
+          "indexId": "4:7095839243737729672",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:3669947731516796307",
+          "name": "documentTitle",
+          "type": 9
+        },
+        {
+          "id": "4:1845542935587843597",
+          "name": "content",
+          "type": 9
+        },
+        {
+          "id": "5:2180273864053888294",
+          "name": "ordinal",
+          "type": 6
+        },
+        {
+          "id": "6:7667178551622631131",
+          "name": "embedding",
+          "indexId": "5:92282821795881137",
+          "type": 28,
+          "flags": 8
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "4:1112370167415798597",
+      "lastPropertyId": "6:7253980826589081638",
+      "name": "DocumentEntity",
+      "properties": [
+        {
+          "id": "1:4004052055169020603",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4413864441623492044",
+          "name": "uid",
+          "indexId": "6:1239631498705740204",
+          "type": 9,
+          "flags": 2080
+        },
+        {
+          "id": "3:5290601097662739550",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "4:8369834925436295824",
+          "name": "addedAtMs",
+          "type": 6
+        },
+        {
+          "id": "5:1198711918635197693",
+          "name": "chunkCount",
+          "type": 6
+        },
+        {
+          "id": "6:7253980826589081638",
+          "name": "charCount",
+          "type": 6
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "4:1112370167415798597",
+  "lastIndexId": "6:1239631498705740204",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}

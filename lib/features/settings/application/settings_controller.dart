@@ -11,6 +11,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kActiveModel = 'settings.activeModelId';
   static const _kHfToken = 'settings.hfToken';
   static const _kDynamicColor = 'settings.dynamicColor';
+  static const _kAutoSpeak = 'settings.autoSpeakReplies';
   static const _kTemperature = 'settings.temperature';
   static const _kTopK = 'settings.topK';
   static const _kTopP = 'settings.topP';
@@ -31,6 +32,7 @@ class SettingsController extends Notifier<AppSettings> {
       activeModelId: _prefs.getString(_kActiveModel),
       huggingFaceToken: _prefs.getString(_kHfToken),
       useDynamicColor: _prefs.getBool(_kDynamicColor) ?? true,
+      autoSpeakReplies: _prefs.getBool(_kAutoSpeak) ?? false,
       generationConfig: GenerationConfig(
         temperature: _prefs.getDouble(_kTemperature) ?? 0.8,
         topK: _prefs.getInt(_kTopK) ?? 40,
@@ -51,6 +53,12 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> setDynamicColor({required bool enabled}) async {
     state = state.copyWith(useDynamicColor: enabled);
     await _prefs.setBool(_kDynamicColor, enabled);
+  }
+
+  /// Toggles automatic read-aloud for assistant replies.
+  Future<void> setAutoSpeakReplies({required bool enabled}) async {
+    state = state.copyWith(autoSpeakReplies: enabled);
+    await _prefs.setBool(_kAutoSpeak, enabled);
   }
 
   /// Sets (or clears with null) the active model id.

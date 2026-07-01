@@ -10,6 +10,7 @@ class AppSettings extends Equatable {
     this.generationConfig = const GenerationConfig(),
     this.huggingFaceToken,
     this.useDynamicColor = true,
+    this.autoSpeakReplies = false,
   });
 
   /// Light / dark / system theme.
@@ -27,12 +28,16 @@ class AppSettings extends Equatable {
   /// Whether to use the platform dynamic color palette when available.
   final bool useDynamicColor;
 
+  /// When true, assistant replies are read aloud after generation completes.
+  final bool autoSpeakReplies;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     String? Function()? activeModelId,
     GenerationConfig? generationConfig,
     String? Function()? huggingFaceToken,
     bool? useDynamicColor,
+    bool? autoSpeakReplies,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -44,6 +49,7 @@ class AppSettings extends Equatable {
           ? huggingFaceToken()
           : this.huggingFaceToken,
       useDynamicColor: useDynamicColor ?? this.useDynamicColor,
+      autoSpeakReplies: autoSpeakReplies ?? this.autoSpeakReplies,
     );
   }
 
@@ -54,5 +60,6 @@ class AppSettings extends Equatable {
     generationConfig,
     huggingFaceToken,
     useDynamicColor,
+    autoSpeakReplies,
   ];
 }

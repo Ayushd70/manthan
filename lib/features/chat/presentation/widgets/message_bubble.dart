@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:manthan/core/utils/formatters.dart';
 import 'package:manthan/features/chat/domain/chat_message.dart';
+import 'package:manthan/features/voice/application/tts_controller.dart';
 
 /// Renders a single chat message bubble (user or assistant).
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends ConsumerWidget {
   const MessageBubble({required this.message, super.key});
 
   /// The message to render.
   final ChatMessage message;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isUser = message.role == ChatRole.user;
     final scheme = theme.colorScheme;
+    final tts = ref.watch(ttsControllerProvider);
+    final isSpeakingThis = tts.isSpeaking && tts.activeMessageId == message.id;
 
     final bubbleColor = isUser
         ? scheme.primary
@@ -25,6 +29,12 @@ class MessageBubble extends StatelessWidget {
     final textColor = isUser
         ? scheme.onPrimary
         : (message.isError ? scheme.onErrorContainer : scheme.onSurface);
+
+    final canSpeak =
+        !isUser &&
+        !message.isStreaming &&
+        !message.isError &&
+        message.text.trim().isNotEmpty;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -65,15 +75,47 @@ class MessageBubble extends StatelessWidget {
                 ),
               if (message.sources.isNotEmpty)
                 _Sources(sources: message.sources),
-              if (message.tokensPerSecond != null)
+              if (canSpeak || message.tokensPerSecond != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    '${Formatters.tokensPerSecond(message.tokensPerSecond!)}'
-                    '${message.tokenCount != null ? ' · ${message.tokenCount} tok' : ''}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: textColor.withValues(alpha: 0.7),
-                    ),
+                  child: Row(
+                    children: <Widget>[
+                      if (canSpeak)
+                        IconButton(
+                          onPressed: tts.available
+                              ? () => ref
+                                    .read(ttsControllerProvider.notifier)
+                                    .speakMessage(
+                                      messageId: message.id,
+                                      markdownText: message.text,
+                                    )
+                              : null,
+                          icon: Icon(
+                            isSpeakingThis
+                                ? Icons.stop_circle_outlined
+                                : Icons.volume_up_outlined,
+                            size: 18,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          tooltip: isSpeakingThis ? 'Stop' : 'Read aloud',
+                          color: textColor.withValues(alpha: 0.75),
+                        ),
+                      if (message.tokensPerSecond != null)
+                        Expanded(
+                          child: Text(
+                            '${Formatters.tokensPerSecond(message.tokensPerSecond!)}'
+                            '${message.tokenCount != null ? ' · ${message.tokenCount} tok' : ''}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: textColor.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
             ],

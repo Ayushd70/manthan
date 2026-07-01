@@ -53,6 +53,17 @@ class SettingsPage extends ConsumerWidget {
             onChanged: (v) => controller.setDynamicColor(enabled: v),
           ),
           const Divider(),
+          const _SectionHeader('Voice'),
+          SwitchListTile(
+            secondary: const Icon(Icons.record_voice_over_outlined),
+            title: const Text('Auto-speak replies'),
+            subtitle: const Text(
+              'Read assistant answers aloud when generation finishes',
+            ),
+            value: settings.autoSpeakReplies,
+            onChanged: (v) => controller.setAutoSpeakReplies(enabled: v),
+          ),
+          const Divider(),
           const _SectionHeader('Engine'),
           ListTile(
             leading: const Icon(Icons.memory),

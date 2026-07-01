@@ -10,6 +10,8 @@ import 'package:manthan/features/chat/domain/chat_session.dart';
 import 'package:manthan/features/inference/application/engine_controller.dart';
 import 'package:manthan/features/inference/domain/llm_engine.dart';
 import 'package:manthan/features/rag/application/rag_controller.dart';
+import 'package:manthan/features/settings/application/settings_controller.dart';
+import 'package:manthan/features/voice/application/tts_controller.dart';
 import 'package:uuid/uuid.dart';
 
 /// Observable state of the chat feature.
@@ -118,6 +120,8 @@ class ChatController extends Notifier<ChatState> {
   }) async {
     final trimmed = text.trim();
     if ((trimmed.isEmpty && images.isEmpty) || state.isGenerating) return;
+
+    await ref.read(ttsControllerProvider.notifier).stop();
 
     final repo = ref.read(chatRepositoryProvider);
     var session =
@@ -255,6 +259,7 @@ class ChatController extends Notifier<ChatState> {
             );
             state = state.copyWith(isGenerating: false);
             _sub = null;
+            _maybeAutoSpeak(assistantId, buffer.toString());
             if (!completer.isCompleted) completer.complete();
           },
           cancelOnError: true,
@@ -363,6 +368,19 @@ class ChatController extends Notifier<ChatState> {
     final firstLine = text.split('\n').first.trim();
     if (firstLine.length <= 40) return firstLine;
     return '${firstLine.substring(0, 40)}…';
+  }
+
+  void _maybeAutoSpeak(String messageId, String text) {
+    if (!ref.read(settingsProvider).autoSpeakReplies) return;
+    if (text.trim().isEmpty || text == '(no output)') return;
+    unawaited(
+      ref
+          .read(ttsControllerProvider.notifier)
+          .speakMessage(
+            messageId: messageId,
+            markdownText: text,
+          ),
+    );
   }
 }
 

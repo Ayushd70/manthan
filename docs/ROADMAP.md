@@ -10,19 +10,16 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] Multimodal image input (vision models)
 - [x] On-device RAG: chunk → embed → ObjectBox HNSW search → grounded answers with citations
 - [x] Voice input (speech-to-text)
+- [x] Text-to-speech (read answers aloud)
 - [x] Material 3 + dynamic color, light/dark, adjustable generation params
 - [x] Local history (persist, rename, delete, share/export as Markdown)
 - [x] CI (analyze + test + Android/desktop builds) and release workflow
 
 ## Next sprint (priority order)
 
-### 1. Text-to-speech (read answers aloud)
-- **Why:** Completes the voice loop (dictate in, hear out); great for the demo.
-- **Approach:** `flutter_tts` behind a `SpeechSynthesizer` interface mirroring the
-  existing `SpeechRecognizer` seam. Add a speaker toggle on assistant bubbles and
-  an "auto-speak replies" setting. Pause/stop on new input.
-- **Notes:** Keep it offline-first; document that the OS TTS voice may vary by
-  platform. No network during playback.
+### 1. Text-to-speech (read answers aloud) — shipped
+- [x] `flutter_tts` behind `SpeechSynthesizer`; speaker toggle on bubbles
+- [x] Auto-speak setting; stop on new message
 
 ### 2. Real EmbeddingGemma RAG (true semantic search)
 - **Why:** Replace the deterministic mock embedder with genuine semantic

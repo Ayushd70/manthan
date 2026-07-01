@@ -71,6 +71,7 @@ generated on the device in your hand_.
 | **Multimodal**           | Attach images and ask questions about them (vision models)                                                             |
 | **On-device RAG**        | Import notes/text → chunk → embed → ObjectBox HNSW search → grounded answers **with citations**                        |
 | **Voice input**          | On-device speech-to-text dictation                                                                                     |
+| **Voice output**         | Read answers aloud (per-message or auto-speak after replies)                                                           |
 | **Personalization**      | Material 3 + dynamic color, light/dark, adjustable temperature/top-k/top-p/max-tokens/system prompt                    |
 | **History**              | Conversations persisted locally; rename, delete, and **share/export** as Markdown                                      |
 
@@ -212,6 +213,7 @@ format + analyze + tests plus Android & desktop builds.
 - [x] Multimodal image input
 - [x] On-device RAG with ObjectBox HNSW + citations
 - [x] Voice input (speech-to-text)
+- [x] Text-to-speech (read answers aloud)
 - [ ] PDF / DOCX document import
 - [ ] Whisper.cpp STT backend (fully offline transcription)
 - [ ] Text-to-speech (read answers aloud)

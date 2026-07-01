@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:manthan/features/chat/domain/chat_message.dart';
 import 'package:manthan/features/chat/presentation/widgets/message_bubble.dart';
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => ProviderScope(
+  child: MaterialApp(home: Scaffold(body: child)),
+);
 
 void main() {
   group('MessageBubble', () {

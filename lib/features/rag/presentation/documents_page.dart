@@ -126,7 +126,7 @@ class DocumentsPage extends ConsumerWidget {
   }
 
   Future<void> _importFile(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: <String>['txt', 'md', 'markdown', 'text'],
       withData: true,

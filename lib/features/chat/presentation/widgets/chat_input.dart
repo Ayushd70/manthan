@@ -44,18 +44,14 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   }
 
   Future<void> _pickImages() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.image,
-      allowMultiple: true,
-      withData: true,
-    );
+    final result = await FilePicker.pickFiles(type: FileType.image);
     if (result == null) return;
-    setState(() {
-      for (final file in result.files) {
-        final bytes = file.bytes;
-        if (bytes != null) _images.add(bytes);
-      }
-    });
+    final picked = <Uint8List>[];
+    for (final file in result.files) {
+      picked.add(await file.readAsBytes());
+    }
+    if (picked.isEmpty) return;
+    setState(() => _images.addAll(picked));
   }
 
   void _send() {

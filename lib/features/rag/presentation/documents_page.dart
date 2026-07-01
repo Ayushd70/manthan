@@ -126,14 +126,12 @@ class DocumentsPage extends ConsumerWidget {
   }
 
   Future<void> _importFile(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: <String>['txt', 'md', 'markdown', 'text'],
-      withData: true,
     );
-    final file = result?.files.single;
-    final bytes = file?.bytes;
-    if (file == null || bytes == null) return;
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
     final text = utf8.decode(bytes, allowMalformed: true);
     await ref
         .read(ragControllerProvider.notifier)

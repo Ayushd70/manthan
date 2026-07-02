@@ -9,6 +9,7 @@
 Chat with local LLMs, reason over images, talk to your own documents, and dictate
 with your voice. **100% on-device.** Switch on airplane mode and everything still works.
 
+[![Release](https://img.shields.io/github/v/release/Ayushd70/manthan?include_prereleases&label=release)](https://github.com/Ayushd70/manthan/releases/latest)
 [![CI](https://github.com/Ayushd70/manthan/actions/workflows/ci.yaml/badge.svg)](https://github.com/Ayushd70/manthan/actions/workflows/ci.yaml)
 [![Flutter](https://img.shields.io/badge/Flutter-3.41%2B-02569B?logo=flutter)](https://flutter.dev)
 [![Platforms](https://img.shields.io/badge/platforms-Android%20%C2%B7%20iOS%20%C2%B7%20macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-success)](#-platforms)
@@ -148,6 +149,20 @@ flutter run
 The app launches straight into a working chat backed by the **built-in demo
 engine** — no model download required. To run real models, open the **Models**
 tab, download one, then it becomes active automatically.
+
+## 📲 Install (pre-built APK)
+
+Download the latest Android build from
+**[GitHub Releases](https://github.com/Ayushd70/manthan/releases/latest)**.
+
+| APK | Pick this if… |
+| --- | --- |
+| **`manthan-*-arm64-v8a.apk`** | You have a normal modern phone (**recommended**) |
+| `manthan-*-armeabi-v7a.apk` | Older 32-bit ARM device |
+| `manthan-*-x86_64.apk` | Emulator / x86 tablet |
+
+Enable **Install unknown apps** for your browser or files app, open the APK, and
+install. Full steps: [docs/INSTALL.md](docs/INSTALL.md).
 
 ### Quality gate (what CI runs)
 

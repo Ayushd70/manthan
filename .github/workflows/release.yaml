@@ -9,8 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  release-apk:
-    name: Build & publish APK
+  release-android:
+    name: Build & publish Android APKs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,15 +26,72 @@ jobs:
           flutter-version: 3.41.6
           cache: true
 
-      - run: flutter pub get
-      - run: dart run build_runner build --delete-conflicting-outputs
+      - name: Install dependencies
+        run: flutter pub get
 
-      - name: Build release APK (split per ABI)
+      - name: Generate code (ObjectBox)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Verify formatting & analysis
+        run: |
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+
+      - name: Build release APKs (split per ABI)
         run: flutter build apk --release --split-per-abi
+
+      - name: Prepare release artifacts
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          ver="${VERSION#v}"
+          mkdir -p release-artifacts
+          for apk in build/app/outputs/flutter-apk/*-release.apk; do
+            abi=$(basename "$apk" | sed -E 's/^app-|-release\.apk$//g')
+            out="release-artifacts/manthan-${ver}-${abi}.apk"
+            cp "$apk" "$out"
+            sha256sum "$out" | awk '{print $1 "  '"$(basename "$out")"'"}' >> release-artifacts/SHA256SUMS.txt
+          done
+          ls -la release-artifacts/
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          body: |
+            ## Install on Android
+
+            Manthan is **not on the Play Store yet** — sideload the APK from the assets below.
+
+            | Download | For |
+            | --- | --- |
+            | **`manthan-*-arm64-v8a.apk`** | Most phones (2017+) — **start here** |
+            | `manthan-*-armeabi-v7a.apk` | Older 32-bit ARM devices |
+            | `manthan-*-x86_64.apk` | Emulators / rare x86 tablets |
+
+            ### Steps
+
+            1. Download the **`arm64-v8a`** APK (unless you know you need another ABI).
+            2. On your phone: **Settings → Security** → allow installs from your browser/files app.
+            3. Open the downloaded APK and install.
+            4. Launch **Manthan** — the built-in demo engine works immediately with no model download.
+            5. For real on-device models, open **Models**, download one, then chat (some weights need a free [Hugging Face token](https://huggingface.co/settings/tokens) in **Settings**).
+
+            Verify downloads with `SHA256SUMS.txt` in the assets.
+
+            ### Requirements
+
+            - Android **8.0+** (API 26+)
+            - ~200 MB app install; models are downloaded separately (hundreds of MB to a few GB)
+
+            ### iOS / desktop
+
+            iOS builds require Apple code signing and are not distributed here yet. Clone the repo and build locally — see [docs/INSTALL.md](https://github.com/Ayushd70/manthan/blob/main/docs/INSTALL.md).
+
+            ---
+
+            **Privacy:** inference runs on-device. Network is used only when you download model weights.
           files: |
-            build/app/outputs/flutter-apk/*.apk
+            release-artifacts/*.apk
+            release-artifacts/SHA256SUMS.txt

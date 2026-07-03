@@ -19,7 +19,7 @@ class ModelsController extends Notifier<Map<String, ModelDownload>> {
         unawaited(sub.cancel());
       }
     });
-    unawaited(refresh());
+    unawaited(Future<void>.microtask(refresh));
     return <String, ModelDownload>{
       for (final m in ModelCatalog.all) m.id: ModelDownload(modelId: m.id),
     };

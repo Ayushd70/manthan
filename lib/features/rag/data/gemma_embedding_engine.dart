@@ -13,10 +13,17 @@ class GemmaEmbeddingEngine implements EmbeddingEngine {
   int get dimensions => _dimensions;
 
   @override
-  Future<void> load({required String modelPath, String? tokenizerPath}) async {
+  Future<void> load({
+    required String modelPath,
+    String? tokenizerPath,
+    String? iosTokenizerPath,
+  }) async {
     await fg.FlutterGemma.installEmbedder()
         .modelFromFile(modelPath)
-        .tokenizerFromFile(tokenizerPath ?? modelPath)
+        .tokenizerFromFile(
+          tokenizerPath ?? iosTokenizerPath ?? modelPath,
+          iosPath: iosTokenizerPath,
+        )
         .install();
     final model = await fg.FlutterGemma.getActiveEmbedder();
     _model = model;

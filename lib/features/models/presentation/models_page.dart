@@ -6,6 +6,7 @@ import 'package:manthan/features/models/application/models_controller.dart';
 import 'package:manthan/features/models/domain/model_catalog.dart';
 import 'package:manthan/features/models/domain/model_download.dart';
 import 'package:manthan/features/models/domain/model_info.dart';
+import 'package:manthan/features/rag/application/rag_controller.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
 
 /// Catalog of on-device models with download and activation controls.
@@ -42,6 +43,18 @@ class ModelsPage extends ConsumerWidget {
               download: downloads[model.id] ?? ModelDownload(modelId: model.id),
               isActive: activeModelId == model.id,
             ),
+          const SizedBox(height: 16),
+          Text(
+            'Document search',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          _EmbeddingTile(
+            model: ModelCatalog.embedding,
+            download:
+                downloads[ModelCatalog.embedding.id] ??
+                ModelDownload(modelId: ModelCatalog.embedding.id),
+          ),
         ],
       ),
     );
@@ -265,5 +278,174 @@ class _Tag extends StatelessWidget {
       ),
       child: Text(label, style: theme.textTheme.labelSmall),
     );
+  }
+}
+
+/// Embedding model tile — download/delete only (not a chat model).
+class _EmbeddingTile extends ConsumerWidget {
+  const _EmbeddingTile({required this.model, required this.download});
+
+  final ModelInfo model;
+  final ModelDownload download;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final controller = ref.read(modelsControllerProvider.notifier);
+    final rag = ref.watch(ragControllerProvider);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(model.name, style: theme.textTheme.titleMedium),
+                ),
+                Chip(
+                  label: Text(
+                    rag.isUsingMockEmbedder ? 'Mock search' : 'Semantic',
+                  ),
+                  backgroundColor: rag.isUsingMockEmbedder
+                      ? theme.colorScheme.surfaceContainerHighest
+                      : theme.colorScheme.primaryContainer,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: <Widget>[
+                const _Tag('RAG'),
+                if (model.parameterLabel.isNotEmpty) _Tag(model.parameterLabel),
+                _Tag(Formatters.bytes(model.sizeBytes)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(model.description, style: theme.textTheme.bodySmall),
+            if (rag.isUsingMockEmbedder && rag.chunkCount > 0) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                'Documents indexed with mock vectors. Download to enable '
+                'semantic search — existing chunks will be re-indexed '
+                'automatically.',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.tertiary,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            _EmbeddingActions(
+              model: model,
+              download: download,
+              controller: controller,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmbeddingActions extends StatelessWidget {
+  const _EmbeddingActions({
+    required this.model,
+    required this.download,
+    required this.controller,
+  });
+
+  final ModelInfo model;
+  final ModelDownload download;
+  final ModelsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    switch (download.status) {
+      case ModelDownloadStatus.downloading:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            LinearProgressIndicator(value: download.progress),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => controller.cancel(model.id),
+                icon: const Icon(Icons.close),
+                label: const Text('Cancel'),
+              ),
+            ),
+          ],
+        );
+      case ModelDownloadStatus.downloaded:
+        return Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => _confirmDelete(context),
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Delete'),
+          ),
+        );
+      case ModelDownloadStatus.failed:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              download.error ?? 'Download failed',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.tonalIcon(
+                onPressed: () => controller.download(model),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ),
+          ],
+        );
+      case ModelDownloadStatus.notDownloaded:
+        return Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton.icon(
+            onPressed: () => controller.download(model),
+            icon: const Icon(Icons.download),
+            label: const Text('Download'),
+          ),
+        );
+    }
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete ${model.name}?'),
+        content: const Text(
+          'Semantic search will fall back to mock vectors until you '
+          'download the model again.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) await controller.delete(model);
   }
 }

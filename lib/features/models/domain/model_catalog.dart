@@ -6,7 +6,7 @@ import 'package:manthan/features/models/domain/model_info.dart';
 /// URLs point at publicly hosted weights. Sizes are approximate. The user can
 /// also add any local GGUF via the file picker (see model manager).
 abstract final class ModelCatalog {
-  /// All catalog entries.
+  /// All chat/inference catalog entries.
   static const List<ModelInfo> all = <ModelInfo>[
     ModelInfo(
       id: 'gemma3-1b-it-int4',
@@ -84,18 +84,39 @@ abstract final class ModelCatalog {
   static const ModelInfo embedding = ModelInfo(
     id: 'embeddinggemma-300m',
     name: 'EmbeddingGemma 300M',
-    description: 'On-device text embeddings powering document search (RAG).',
+    description:
+        'On-device semantic embeddings for document search. Download this '
+        'to upgrade RAG from keyword-style mock vectors to true meaning-based '
+        'retrieval.',
     sizeBytes: 179 * 1024 * 1024,
     downloadUrl:
-        'https://huggingface.co/litert-community/embeddinggemma-300m/resolve/main/embeddinggemma-300m_seq256_mixed-precision.tflite',
-    fileName: 'embeddinggemma-300m.tflite',
+        'https://huggingface.co/litert-community/embeddinggemma-300m/resolve/main/embeddinggemma-300M_seq256_mixed-precision.tflite',
+    fileName: 'embeddinggemma-300M_seq256_mixed-precision.tflite',
     engineKind: EngineKind.gemma,
     fileFormat: ModelFileFormat.binary,
     parameterLabel: '300M',
     quantization: 'Mixed',
     requiresAuthToken: true,
     license: 'Gemma',
+    sidecars: <ModelSidecar>[
+      ModelSidecar(
+        downloadUrl:
+            'https://huggingface.co/litert-community/embeddinggemma-300m/resolve/main/sentencepiece.model',
+        fileName: 'embeddinggemma-sentencepiece.model',
+        sizeBytes: 4 * 1024 * 1024,
+        scope: ModelSidecarScope.nonIos,
+      ),
+      ModelSidecar(
+        downloadUrl:
+            'https://github.com/DenisovAV/flutter_gemma/releases/download/v0.12.5/embeddinggemma_tokenizer.json',
+        fileName: 'embeddinggemma_tokenizer.json',
+        scope: ModelSidecarScope.ios,
+      ),
+    ],
   );
+
+  /// Every model the download manager tracks (chat + embedding).
+  static List<ModelInfo> get managed => <ModelInfo>[...all, embedding];
 
   /// Looks up a catalog entry by [id], or null if unknown.
   static ModelInfo? byId(String id) {

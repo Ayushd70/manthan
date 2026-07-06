@@ -59,9 +59,10 @@ class DocumentsPage extends ConsumerWidget {
                               Expanded(
                                 child: Text(
                                   '${state.documents.length} documents · '
-                                  '${state.chunkCount} indexed chunks. Toggle '
-                                  'document grounding in a chat to ask '
-                                  'questions about them.',
+                                  '${state.chunkCount} indexed chunks · '
+                                  '${state.isUsingMockEmbedder ? 'mock' : 'semantic'} '
+                                  'search. Toggle document grounding in a chat '
+                                  'to ask questions about them.',
                                   style: theme.textTheme.bodySmall,
                                 ),
                               ),

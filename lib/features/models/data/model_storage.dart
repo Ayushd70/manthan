@@ -29,35 +29,51 @@ class ModelStorage {
     return p.join(dir.path, model.fileName);
   }
 
-  /// Partial-download path used while a download is in flight.
-  Future<String> partPathFor(ModelInfo model) async =>
-      '${await pathFor(model)}.part';
+  /// Absolute path for a [sidecar] companion file.
+  Future<String> sidecarPathFor(ModelSidecar sidecar) async {
+    final dir = await directory();
+    return p.join(dir.path, sidecar.fileName);
+  }
 
-  /// Whether [model] has been fully downloaded.
+  /// Partial-download path used while a download is in flight.
+  Future<String> partPathFor(String targetPath) async => '$targetPath.part';
+
+  /// Whether [model] has been fully downloaded, including required sidecars.
   ///
   /// Considers a file present and (when known) at least 95% of the expected
   /// size, to tolerate small discrepancies between catalog estimates and the
   /// actual artifact while still rejecting truncated downloads.
   Future<bool> isDownloaded(ModelInfo model) async {
-    final file = File(await pathFor(model));
-    if (!file.existsSync()) return false;
-    if (model.sizeBytes <= 0) return true;
-    final len = await file.length();
-    return len >= (model.sizeBytes * 0.95).floor();
+    if (!await _fileReady(await pathFor(model), model.sizeBytes)) return false;
+    for (final sidecar in model.requiredSidecars(isIos: Platform.isIOS)) {
+      if (!await _fileReady(
+        await sidecarPathFor(sidecar),
+        sidecar.sizeBytes,
+      )) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  /// Size on disk of [model], or 0 if absent.
+  /// Size on disk of [model] and its sidecars, or 0 if absent.
   Future<int> sizeOnDisk(ModelInfo model) async {
-    final file = File(await pathFor(model));
-    return file.existsSync() ? file.length() : 0;
+    var total = 0;
+    final main = File(await pathFor(model));
+    if (main.existsSync()) total += await main.length();
+    for (final sidecar in model.sidecars) {
+      final file = File(await sidecarPathFor(sidecar));
+      if (file.existsSync()) total += await file.length();
+    }
+    return total;
   }
 
-  /// Deletes the model file (and any leftover partial download).
+  /// Deletes the model file, sidecars, and any leftover partial downloads.
   Future<void> delete(ModelInfo model) async {
-    final file = File(await pathFor(model));
-    if (file.existsSync()) await file.delete();
-    final part = File(await partPathFor(model));
-    if (part.existsSync()) await part.delete();
+    await _deletePath(await pathFor(model));
+    for (final sidecar in model.sidecars) {
+      await _deletePath(await sidecarPathFor(sidecar));
+    }
   }
 
   /// Sum of all model file sizes in the models directory.
@@ -80,5 +96,40 @@ class ModelStorage {
     if (!file.existsSync()) return false;
     final digest = await sha256.bind(file.openRead()).first;
     return digest.toString() == expected.toLowerCase();
+  }
+
+  /// Paths needed to load [model] as an embedding engine on this device.
+  Future<({String modelPath, String? tokenizerPath, String? iosTokenizerPath})>
+  embeddingPathsFor(ModelInfo model) async {
+    String? tokenizerPath;
+    String? iosTokenizerPath;
+    for (final sidecar in model.sidecars) {
+      if (sidecar.scope == ModelSidecarScope.nonIos && !Platform.isIOS) {
+        tokenizerPath = await sidecarPathFor(sidecar);
+      }
+      if (sidecar.scope == ModelSidecarScope.ios && Platform.isIOS) {
+        iosTokenizerPath = await sidecarPathFor(sidecar);
+      }
+    }
+    return (
+      modelPath: await pathFor(model),
+      tokenizerPath: tokenizerPath,
+      iosTokenizerPath: iosTokenizerPath,
+    );
+  }
+
+  Future<bool> _fileReady(String path, int expectedBytes) async {
+    final file = File(path);
+    if (!file.existsSync()) return false;
+    if (expectedBytes <= 0) return true;
+    final len = await file.length();
+    return len >= (expectedBytes * 0.95).floor();
+  }
+
+  Future<void> _deletePath(String path) async {
+    final file = File(path);
+    if (file.existsSync()) await file.delete();
+    final part = File('$path.part');
+    if (part.existsSync()) await part.delete();
   }
 }

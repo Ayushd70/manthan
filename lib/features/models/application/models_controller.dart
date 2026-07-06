@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:manthan/core/providers.dart';
@@ -21,7 +22,7 @@ class ModelsController extends Notifier<Map<String, ModelDownload>> {
     });
     unawaited(Future<void>.microtask(refresh));
     return <String, ModelDownload>{
-      for (final m in ModelCatalog.all) m.id: ModelDownload(modelId: m.id),
+      for (final m in ModelCatalog.managed) m.id: ModelDownload(modelId: m.id),
     };
   }
 
@@ -29,7 +30,7 @@ class ModelsController extends Notifier<Map<String, ModelDownload>> {
   Future<void> refresh() async {
     final storage = ref.read(modelStorageProvider);
     final next = Map<String, ModelDownload>.from(state);
-    for (final model in ModelCatalog.all) {
+    for (final model in ModelCatalog.managed) {
       // Don't clobber an in-flight download.
       if (next[model.id]?.status == ModelDownloadStatus.downloading) continue;
       final downloaded = await storage.isDownloaded(model);
@@ -39,7 +40,7 @@ class ModelsController extends Notifier<Map<String, ModelDownload>> {
             ? ModelDownloadStatus.downloaded
             : ModelDownloadStatus.notDownloaded,
         receivedBytes: downloaded ? await storage.sizeOnDisk(model) : 0,
-        totalBytes: model.sizeBytes,
+        totalBytes: model.estimatedTotalBytes(isIos: Platform.isIOS),
       );
     }
     state = next;
@@ -70,7 +71,7 @@ class ModelsController extends Notifier<Map<String, ModelDownload>> {
     _set(
       ModelDownload(
         modelId: modelId,
-        totalBytes: model?.sizeBytes ?? 0,
+        totalBytes: model?.estimatedTotalBytes(isIos: Platform.isIOS) ?? 0,
       ),
     );
   }

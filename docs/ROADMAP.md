@@ -8,7 +8,7 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] Streaming chat with markdown, code highlighting, tokens/sec + RAM HUD
 - [x] Model manager: resumable downloads, SHA-256 verification, activate/delete
 - [x] Multimodal image input (vision models)
-- [x] On-device RAG: chunk → embed → ObjectBox HNSW search → grounded answers with citations
+- [x] On-device RAG: chunk → embed → ObjectBox HNSW search → grounded answers with citations (mock + EmbeddingGemma)
 - [x] Voice input (speech-to-text)
 - [x] Text-to-speech (read answers aloud)
 - [x] Material 3 + dynamic color, light/dark, adjustable generation params
@@ -21,13 +21,11 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] `flutter_tts` behind `SpeechSynthesizer`; speaker toggle on bubbles
 - [x] Auto-speak setting; stop on new message
 
-### 2. Real EmbeddingGemma RAG (true semantic search)
-- **Why:** Replace the deterministic mock embedder with genuine semantic
-  retrieval — the headline RAG feature.
-- **Approach:** Wire `GemmaEmbeddingEngine` end-to-end: add the embedding model to
-  the catalog, download/activate it, and switch `RagController` to use it when
-  available (fall back to mock when not). Ensure `kEmbeddingDimensions` matches.
-- **Notes:** Re-index existing documents on embedder change; show progress.
+### 2. Real EmbeddingGemma RAG (true semantic search) — shipped
+- [x] `GemmaEmbeddingEngine` + `EmbeddingController` with mock fallback
+- [x] Embedding model in catalog with tokenizer sidecars (iOS json + sentencepiece)
+- [x] Download UI on Models page; semantic vs mock status on Documents
+- [x] Auto re-index when EmbeddingGemma becomes available
 
 ### 3. PDF / DOCX document import
 - **Why:** PDFs are the most-requested document type; today only txt/md/paste.

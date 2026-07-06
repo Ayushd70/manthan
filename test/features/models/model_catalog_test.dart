@@ -17,6 +17,11 @@ void main() {
       expect(kinds, contains(EngineKind.llamaCpp));
     });
 
+    test('embedding model includes tokenizer sidecars', () {
+      expect(ModelCatalog.embedding.sidecars, isNotEmpty);
+      expect(ModelCatalog.managed, contains(ModelCatalog.embedding));
+    });
+
     test('byId resolves catalog and embedding models', () {
       final first = ModelCatalog.all.first;
       expect(ModelCatalog.byId(first.id), first);

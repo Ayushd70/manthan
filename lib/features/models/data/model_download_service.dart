@@ -52,12 +52,8 @@ class ModelDownloadService {
     CancelToken cancelToken,
     String? authToken,
   ) async {
-    final target = await _storage.pathFor(model);
-    final partPath = await _storage.partPathFor(model);
-    final partFile = File(partPath);
-
-    var received = partFile.existsSync() ? await partFile.length() : 0;
-    var total = model.sizeBytes;
+    final totalBytes = model.estimatedTotalBytes(isIos: Platform.isIOS);
+    var completedBytes = 0;
 
     void emit(ModelDownloadStatus status, {String? error}) {
       if (controller.isClosed) return;
@@ -65,8 +61,8 @@ class ModelDownloadService {
         ModelDownload(
           modelId: model.id,
           status: status,
-          receivedBytes: received,
-          totalBytes: total,
+          receivedBytes: completedBytes,
+          totalBytes: totalBytes,
           error: error,
         ),
       );
@@ -75,60 +71,45 @@ class ModelDownloadService {
     emit(ModelDownloadStatus.downloading);
 
     try {
-      final headers = <String, dynamic>{
-        if (authToken != null && authToken.isNotEmpty)
-          'Authorization': 'Bearer $authToken',
-        if (received > 0) 'Range': 'bytes=$received-',
-      };
-
-      final response = await _dio.get<ResponseBody>(
-        model.downloadUrl,
-        options: Options(
-          responseType: ResponseType.stream,
-          headers: headers,
-          followRedirects: true,
-          validateStatus: (s) => s != null && s < 400,
-        ),
+      final mainTarget = await _storage.pathFor(model);
+      completedBytes = await _downloadOne(
+        url: model.downloadUrl,
+        targetPath: mainTarget,
+        expectedBytes: model.sizeBytes,
         cancelToken: cancelToken,
-      );
-
-      // If the server ignored our Range request, restart from scratch.
-      final isPartial = response.statusCode == 206;
-      if (received > 0 && !isPartial) {
-        received = 0;
-        if (partFile.existsSync()) await partFile.delete();
-      }
-
-      final contentLength = _contentLength(response.headers);
-      if (contentLength != null) {
-        total = received + contentLength;
-      }
-
-      final sink = partFile.openWrite(
-        mode: received > 0 ? FileMode.append : FileMode.write,
-      );
-
-      try {
-        await for (final chunk in response.data!.stream) {
-          received += chunk.length;
-          sink.add(chunk);
+        authToken: authToken,
+        onProgress: (received) {
           emit(ModelDownloadStatus.downloading);
-        }
-        await sink.flush();
-      } finally {
-        await sink.close();
-      }
+        },
+        baseCompleted: completedBytes,
+        totalBytes: totalBytes,
+        controller: controller,
+        modelId: model.id,
+      );
 
-      await partFile.rename(target);
+      for (final sidecar in model.requiredSidecars(isIos: Platform.isIOS)) {
+        final sidecarTarget = await _storage.sidecarPathFor(sidecar);
+        completedBytes = await _downloadOne(
+          url: sidecar.downloadUrl,
+          targetPath: sidecarTarget,
+          expectedBytes: sidecar.sizeBytes,
+          cancelToken: cancelToken,
+          authToken: sidecar.scope == ModelSidecarScope.ios ? null : authToken,
+          onProgress: (_) => emit(ModelDownloadStatus.downloading),
+          baseCompleted: completedBytes,
+          totalBytes: totalBytes,
+          controller: controller,
+          modelId: model.id,
+        );
+      }
 
       if (!await _storage.verifyChecksum(model)) {
-        await File(target).delete();
+        await File(mainTarget).delete();
         emit(ModelDownloadStatus.failed, error: 'Checksum verification failed');
         return;
       }
 
-      received = await File(target).length();
-      total = received;
+      completedBytes = await _storage.sizeOnDisk(model);
       emit(ModelDownloadStatus.downloaded);
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
@@ -139,6 +120,86 @@ class ModelDownloadService {
     } on Object catch (e) {
       emit(ModelDownloadStatus.failed, error: e.toString());
     }
+  }
+
+  Future<int> _downloadOne({
+    required String url,
+    required String targetPath,
+    required int expectedBytes,
+    required CancelToken cancelToken,
+    required String? authToken,
+    required void Function(int receivedInFile) onProgress,
+    required int baseCompleted,
+    required int totalBytes,
+    required StreamController<ModelDownload> controller,
+    required String modelId,
+  }) async {
+    final partPath = await _storage.partPathFor(targetPath);
+    final partFile = File(partPath);
+
+    var received = partFile.existsSync() ? await partFile.length() : 0;
+    var fileTotal = expectedBytes;
+
+    void emitProgress() {
+      if (controller.isClosed) return;
+      controller.add(
+        ModelDownload(
+          modelId: modelId,
+          status: ModelDownloadStatus.downloading,
+          receivedBytes: baseCompleted + received,
+          totalBytes: totalBytes,
+        ),
+      );
+    }
+
+    emitProgress();
+
+    final headers = <String, dynamic>{
+      if (authToken != null && authToken.isNotEmpty)
+        'Authorization': 'Bearer $authToken',
+      if (received > 0) 'Range': 'bytes=$received-',
+    };
+
+    final response = await _dio.get<ResponseBody>(
+      url,
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: headers,
+        followRedirects: true,
+        validateStatus: (s) => s != null && s < 400,
+      ),
+      cancelToken: cancelToken,
+    );
+
+    final isPartial = response.statusCode == 206;
+    if (received > 0 && !isPartial) {
+      received = 0;
+      if (partFile.existsSync()) await partFile.delete();
+    }
+
+    final contentLength = _contentLength(response.headers);
+    if (contentLength != null) {
+      fileTotal = received + contentLength;
+    }
+
+    final sink = partFile.openWrite(
+      mode: received > 0 ? FileMode.append : FileMode.write,
+    );
+
+    try {
+      await for (final chunk in response.data!.stream) {
+        received += chunk.length;
+        sink.add(chunk);
+        onProgress(received);
+        emitProgress();
+      }
+      await sink.flush();
+    } finally {
+      await sink.close();
+    }
+
+    await partFile.rename(targetPath);
+    return baseCompleted + (fileTotal > 0 ? fileTotal : received);
   }
 
   int? _contentLength(Headers headers) {

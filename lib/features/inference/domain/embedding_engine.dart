@@ -12,8 +12,12 @@ abstract interface class EmbeddingEngine {
   /// Dimensionality of produced vectors (e.g. 768 for EmbeddingGemma).
   int get dimensions;
 
-  /// Loads the embedding model at [modelPath] (+ optional [tokenizerPath]).
-  Future<void> load({required String modelPath, String? tokenizerPath});
+  /// Loads the embedding model at [modelPath] (+ optional tokenizer paths).
+  Future<void> load({
+    required String modelPath,
+    String? tokenizerPath,
+    String? iosTokenizerPath,
+  });
 
   /// Embeds a search query (some models prefix queries differently).
   Future<List<double>> embedQuery(String text);

@@ -133,4 +133,17 @@ class DocumentRepository {
     _documents.removeAll();
     _chunks.removeAll();
   }
+
+  /// All indexed chunks, for re-embedding when the embedder changes.
+  List<DocumentChunkEntity> allChunks() => _chunks.getAll();
+
+  /// Updates embeddings for existing chunks in place.
+  void updateEmbeddings(Map<int, List<double>> byChunkId) {
+    for (final entry in byChunkId.entries) {
+      final chunk = _chunks.get(entry.key);
+      if (chunk == null) continue;
+      chunk.embedding = entry.value;
+      _chunks.put(chunk);
+    }
+  }
 }

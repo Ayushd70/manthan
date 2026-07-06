@@ -20,7 +20,11 @@ class MockEmbeddingEngine implements EmbeddingEngine {
   int get dimensions => kEmbeddingDimensions;
 
   @override
-  Future<void> load({required String modelPath, String? tokenizerPath}) async {
+  Future<void> load({
+    required String modelPath,
+    String? tokenizerPath,
+    String? iosTokenizerPath,
+  }) async {
     _loaded = true;
   }
 

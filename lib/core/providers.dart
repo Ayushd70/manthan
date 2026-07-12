@@ -3,6 +3,7 @@ import 'package:manthan/data/local/object_box.dart';
 import 'package:manthan/features/chat/data/chat_repository.dart';
 import 'package:manthan/features/models/data/model_download_service.dart';
 import 'package:manthan/features/models/data/model_storage.dart';
+import 'package:manthan/features/prompts/data/prompt_repository.dart';
 import 'package:manthan/features/rag/data/document_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,4 +35,9 @@ final chatRepositoryProvider = Provider<ChatRepository>(
 /// RAG document + vector persistence.
 final documentRepositoryProvider = Provider<DocumentRepository>(
   (ref) => DocumentRepository(ref.watch(objectBoxProvider).store),
+);
+
+/// Saved system prompt persistence.
+final promptRepositoryProvider = Provider<PromptRepository>(
+  (ref) => PromptRepository(ref.watch(objectBoxProvider).store),
 );

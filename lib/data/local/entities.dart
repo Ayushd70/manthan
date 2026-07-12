@@ -123,3 +123,26 @@ class DocumentChunkEntity {
   @Property(type: PropertyType.floatVector)
   List<double>? embedding;
 }
+
+/// A user-saved system prompt, reusable across conversations.
+@Entity()
+class SavedPromptEntity {
+  SavedPromptEntity({
+    required this.uid,
+    required this.title,
+    required this.content,
+    required this.createdAtMs,
+    this.id = 0,
+  });
+
+  @Id()
+  int id;
+
+  @Index()
+  @Unique()
+  String uid;
+
+  String title;
+  String content;
+  int createdAtMs;
+}

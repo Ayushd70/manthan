@@ -27,12 +27,10 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] Download UI on Models page; semantic vs mock status on Documents
 - [x] Auto re-index when EmbeddingGemma becomes available
 
-### 3. PDF / DOCX document import
-- **Why:** PDFs are the most-requested document type; today only txt/md/paste.
-- **Approach:** Add a PDF text extractor (e.g. `syncfusion_flutter_pdf` or a
-  pure-Dart extractor) behind the existing import flow; feed extracted text into
-  `TextChunker`. Add `.pdf`/`.docx` to the file picker.
-- **Notes:** Handle scanned/image-only PDFs gracefully (warn: no embedded text).
+### 3. PDF / DOCX document import — shipped
+- [x] `DocumentTextExtractor` for `.pdf` (Syncfusion) and `.docx` (OOXML)
+- [x] File picker accepts pdf/docx; user-facing errors for image-only PDFs
+- [x] Extracted text flows into existing chunk → embed → index pipeline
 
 ## Backlog
 

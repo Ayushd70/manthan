@@ -1,15 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:manthan/core/utils/formatters.dart';
 import 'package:manthan/features/rag/application/rag_controller.dart';
+import 'package:manthan/features/rag/data/document_text_extractor.dart';
+import 'package:manthan/features/rag/domain/document_import.dart';
 
 /// Manages documents imported for retrieval-augmented generation.
 class DocumentsPage extends ConsumerWidget {
   const DocumentsPage({super.key});
+
+  static const _extractor = DocumentTextExtractor();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -105,8 +108,8 @@ class DocumentsPage extends ConsumerWidget {
           children: <Widget>[
             ListTile(
               leading: const Icon(Icons.upload_file),
-              title: const Text('Import text file'),
-              subtitle: const Text('.txt or .md'),
+              title: const Text('Import file'),
+              subtitle: const Text('.txt, .md, .pdf, or .docx'),
               onTap: () {
                 Navigator.of(context).pop();
                 unawaited(_importFile(context, ref));
@@ -129,14 +132,29 @@ class DocumentsPage extends ConsumerWidget {
   Future<void> _importFile(BuildContext context, WidgetRef ref) async {
     final file = await FilePicker.pickFile(
       type: FileType.custom,
-      allowedExtensions: <String>['txt', 'md', 'markdown', 'text'],
+      allowedExtensions: <String>[
+        'txt',
+        'md',
+        'markdown',
+        'text',
+        'pdf',
+        'docx',
+      ],
     );
     if (file == null) return;
-    final bytes = await file.readAsBytes();
-    final text = utf8.decode(bytes, allowMalformed: true);
-    await ref
-        .read(ragControllerProvider.notifier)
-        .importText(title: file.name, text: text);
+
+    try {
+      final bytes = await file.readAsBytes();
+      final text = _extractor.extract(fileName: file.name, bytes: bytes);
+      await ref
+          .read(ragControllerProvider.notifier)
+          .importText(title: file.name, text: text);
+    } on DocumentImportException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    }
   }
 
   Future<void> _pasteText(BuildContext context, WidgetRef ref) async {
@@ -248,8 +266,9 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Import notes or text files. Manthan splits, embeds, and indexes '
-              'them on-device so you can ask grounded questions — all offline.',
+              'Import notes, PDFs, or Word files. Manthan extracts text, '
+              'embeds, and indexes it on-device so you can ask grounded '
+              'questions — all offline.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

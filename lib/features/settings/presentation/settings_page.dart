@@ -87,6 +87,15 @@ class SettingsPage extends ConsumerWidget {
                 ref.read(engineControllerProvider.notifier).reloadActive(),
           ),
           const Divider(),
+          const _SectionHeader('Prompts'),
+          ListTile(
+            leading: const Icon(Icons.bookmark_border),
+            title: const Text('Prompt library'),
+            subtitle: const Text('Save and apply reusable system prompts'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(Routes.prompts),
+          ),
+          const Divider(),
           const _SectionHeader('Downloads'),
           _HuggingFaceTokenTile(
             token: settings.huggingFaceToken,

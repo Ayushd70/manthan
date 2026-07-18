@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:manthan/features/chat/domain/chat_message.dart';
+import 'package:manthan/features/inference/domain/generation_config.dart';
 
 /// A conversation thread containing an ordered list of [ChatMessage]s.
 class ChatSession extends Equatable {
@@ -11,6 +12,7 @@ class ChatSession extends Equatable {
     this.messages = const <ChatMessage>[],
     this.modelId,
     this.documentScoped = false,
+    this.generationOverrides,
   });
 
   /// Locally unique identifier (uuid v4).
@@ -28,18 +30,29 @@ class ChatSession extends Equatable {
   /// Ordered messages, oldest first.
   final List<ChatMessage> messages;
 
-  /// The model used for this session, if any.
+  /// The model pinned to this session, if any (null = follow the global
+  /// active model in Settings).
   final String? modelId;
 
   /// True when the conversation is grounded against imported documents (RAG).
   final bool documentScoped;
 
+  /// Per-conversation sampling/system-prompt overrides (null = use the
+  /// global generation config from Settings).
+  final GenerationConfig? generationOverrides;
+
+  /// Whether this session pins a specific model or preset, distinct from the
+  /// global defaults.
+  bool get hasCustomEngineSettings =>
+      modelId != null || generationOverrides != null;
+
   ChatSession copyWith({
     String? title,
     DateTime? updatedAt,
     List<ChatMessage>? messages,
-    String? modelId,
+    String? Function()? modelId,
     bool? documentScoped,
+    GenerationConfig? Function()? generationOverrides,
   }) {
     return ChatSession(
       id: id,
@@ -47,8 +60,11 @@ class ChatSession extends Equatable {
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       messages: messages ?? this.messages,
-      modelId: modelId ?? this.modelId,
+      modelId: modelId != null ? modelId() : this.modelId,
       documentScoped: documentScoped ?? this.documentScoped,
+      generationOverrides: generationOverrides != null
+          ? generationOverrides()
+          : this.generationOverrides,
     );
   }
 
@@ -61,5 +77,6 @@ class ChatSession extends Equatable {
     messages,
     modelId,
     documentScoped,
+    generationOverrides,
   ];
 }

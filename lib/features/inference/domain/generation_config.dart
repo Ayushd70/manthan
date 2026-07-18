@@ -13,6 +13,18 @@ class GenerationConfig extends Equatable {
     this.randomSeed,
   });
 
+  /// Restores a config from [json] produced by [toJson].
+  factory GenerationConfig.fromJson(Map<String, Object?> json) {
+    return GenerationConfig(
+      temperature: (json['temperature'] as num?)?.toDouble() ?? 0.8,
+      topK: (json['topK'] as num?)?.toInt() ?? 40,
+      topP: (json['topP'] as num?)?.toDouble() ?? 0.95,
+      maxTokens: (json['maxTokens'] as num?)?.toInt() ?? 1024,
+      systemPrompt: json['systemPrompt'] as String?,
+      randomSeed: (json['randomSeed'] as num?)?.toInt(),
+    );
+  }
+
   /// Softmax temperature. Higher is more creative, lower is more focused.
   final double temperature;
 
@@ -48,6 +60,16 @@ class GenerationConfig extends Equatable {
       randomSeed: randomSeed ?? this.randomSeed,
     );
   }
+
+  /// Serializes to a JSON-compatible map (for per-session persistence).
+  Map<String, Object?> toJson() => <String, Object?>{
+    'temperature': temperature,
+    'topK': topK,
+    'topP': topP,
+    'maxTokens': maxTokens,
+    'systemPrompt': systemPrompt,
+    'randomSeed': randomSeed,
+  };
 
   @override
   List<Object?> get props => <Object?>[

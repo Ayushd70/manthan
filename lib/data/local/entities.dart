@@ -14,6 +14,7 @@ class ChatSessionEntity {
     this.id = 0,
     this.modelId,
     this.documentScoped = false,
+    this.generationOverridesJson,
   });
 
   /// ObjectBox primary key.
@@ -30,6 +31,9 @@ class ChatSessionEntity {
   int updatedAtMs;
   String? modelId;
   bool documentScoped;
+
+  /// JSON-encoded generation config override for this session, if pinned.
+  String? generationOverridesJson;
 }
 
 /// Persisted chat message belonging to a [ChatSessionEntity].

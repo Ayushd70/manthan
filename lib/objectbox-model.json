@@ -68,7 +68,7 @@
     },
     {
       "id": "2:3201799367816915788",
-      "lastPropertyId": "7:4458983417333157433",
+      "lastPropertyId": "8:5351703651227040956",
       "name": "ChatSessionEntity",
       "properties": [
         {
@@ -108,6 +108,11 @@
           "id": "7:4458983417333157433",
           "name": "documentScoped",
           "type": 1
+        },
+        {
+          "id": "8:5351703651227040956",
+          "name": "generationOverridesJson",
+          "type": 9
         }
       ],
       "relations": []

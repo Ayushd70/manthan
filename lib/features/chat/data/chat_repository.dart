@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:manthan/data/local/entities.dart';
 import 'package:manthan/features/chat/domain/chat_message.dart';
 import 'package:manthan/features/chat/domain/chat_session.dart';
+import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/objectbox.g.dart';
 
 /// Persists chat sessions and messages in ObjectBox.
@@ -56,6 +59,9 @@ class ChatRepository {
         updatedAtMs: session.updatedAt.millisecondsSinceEpoch,
         modelId: session.modelId,
         documentScoped: session.documentScoped,
+        generationOverridesJson: session.generationOverrides == null
+            ? null
+            : jsonEncode(session.generationOverrides!.toJson()),
       ),
     );
   }
@@ -118,7 +124,19 @@ class ChatRepository {
     updatedAt: DateTime.fromMillisecondsSinceEpoch(e.updatedAtMs),
     modelId: e.modelId,
     documentScoped: e.documentScoped,
+    generationOverrides: _decodeOverrides(e.generationOverridesJson),
   );
+
+  GenerationConfig? _decodeOverrides(String? json) {
+    if (json == null || json.isEmpty) return null;
+    try {
+      return GenerationConfig.fromJson(
+        jsonDecode(json) as Map<String, Object?>,
+      );
+    } on FormatException {
+      return null;
+    }
+  }
 
   ChatMessage _toMessage(ChatMessageEntity e) => ChatMessage(
     id: e.uid,

@@ -14,6 +14,7 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] Material 3 + dynamic color, light/dark, adjustable generation params
 - [x] Local history (persist, rename, delete, share/export as Markdown)
 - [x] Prompt library: save, edit, and apply reusable system prompts
+- [x] Per-conversation model pinning & generation presets
 - [x] CI (analyze + test + Android/desktop builds) and release workflow
 
 ## Next sprint (priority order)
@@ -38,11 +39,17 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] `PromptLibraryController` for add/update/delete
 - [x] Prompt Library screen at `/settings/prompts`; apply reloads active model
 
+### 5. Per-conversation model pinning & generation presets — shipped
+- [x] `ChatSession.modelId` + `generationOverrides`, persisted as JSON
+- [x] `EngineController.activate()` accepts a config override; races guarded
+      with an activation token
+- [x] `ConversationSettingsSheet` (AppBar action) to pin a model or enable a
+      custom temperature/top-k/top-p/system-prompt preset per chat
+
 ## Backlog
 
 - [ ] Whisper.cpp STT backend (fully offline transcription behind `SpeechRecognizer`)
 - [ ] Function calling / tools (calculator, date/time, on-device utilities)
-- [ ] Per-conversation model pinning & generation presets
 - [ ] Encrypted-at-rest storage for chats & documents
 - [ ] First-run onboarding (explain "100% offline", suggest a starter model)
 - [ ] Golden tests + automated screenshot capture in CI

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:manthan/core/providers.dart';
 import 'package:manthan/features/inference/data/engine_factory.dart';
 import 'package:manthan/features/inference/domain/engine_kind.dart';
+import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/features/inference/domain/llm_engine.dart';
 import 'package:manthan/features/models/domain/model_catalog.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
@@ -19,6 +20,7 @@ class EngineRuntimeState extends Equatable {
     this.status = EngineStatus.idle,
     this.engine,
     this.activeModelId,
+    this.activeConfig = const GenerationConfig(),
     this.displayName = 'Built-in demo model',
     this.kind = EngineKind.mock,
     this.usingFallback = false,
@@ -33,6 +35,10 @@ class EngineRuntimeState extends Equatable {
 
   /// Catalog id of the loaded model (null for the mock engine).
   final String? activeModelId;
+
+  /// Generation config the engine was loaded with (global or a
+  /// per-conversation override), so callers can detect a mismatch.
+  final GenerationConfig activeConfig;
 
   /// Human label for the loaded engine/model.
   final String displayName;
@@ -53,6 +59,7 @@ class EngineRuntimeState extends Equatable {
     EngineStatus? status,
     LlmEngine? engine,
     String? Function()? activeModelId,
+    GenerationConfig? activeConfig,
     String? displayName,
     EngineKind? kind,
     bool? usingFallback,
@@ -64,6 +71,7 @@ class EngineRuntimeState extends Equatable {
       activeModelId: activeModelId != null
           ? activeModelId()
           : this.activeModelId,
+      activeConfig: activeConfig ?? this.activeConfig,
       displayName: displayName ?? this.displayName,
       kind: kind ?? this.kind,
       usingFallback: usingFallback ?? this.usingFallback,
@@ -75,6 +83,7 @@ class EngineRuntimeState extends Equatable {
   List<Object?> get props => <Object?>[
     status,
     activeModelId,
+    activeConfig,
     displayName,
     kind,
     usingFallback,
@@ -84,9 +93,14 @@ class EngineRuntimeState extends Equatable {
 
 /// Owns the currently loaded [LlmEngine] and handles loading / switching.
 class EngineController extends Notifier<EngineRuntimeState> {
+  // Tracked separately from `state` because `onDispose` callbacks run after
+  // the provider has already been torn down, so reading `state` there is
+  // disallowed by Riverpod.
+  LlmEngine? _engine;
+
   @override
   EngineRuntimeState build() {
-    ref.onDispose(() => state.engine?.dispose());
+    ref.onDispose(() => _engine?.dispose());
     // Kick off async initialization based on persisted settings.
     unawaited(
       Future<void>.microtask(() {
@@ -98,11 +112,19 @@ class EngineController extends Notifier<EngineRuntimeState> {
   }
 
   /// Loads the model with [modelId], or the built-in mock when null / missing.
-  Future<void> activate(String? modelId) async {
+  ///
+  /// [configOverride] takes precedence over the global generation config in
+  /// Settings — used for per-conversation presets. When null, the global
+  /// config is used.
+  Future<void> activate(
+    String? modelId, {
+    GenerationConfig? configOverride,
+  }) async {
     final settings = ref.read(settingsProvider);
-    final config = settings.generationConfig;
+    final config = configOverride ?? settings.generationConfig;
 
-    await state.engine?.dispose();
+    await _engine?.dispose();
+    _engine = null;
 
     state = state.copyWith(status: EngineStatus.loading, error: () => null);
 
@@ -111,13 +133,14 @@ class EngineController extends Notifier<EngineRuntimeState> {
     // Fall back to the always-available mock engine when no real model is
     // selected, or the selected file is not present on disk.
     if (model == null || model.engineKind == EngineKind.mock) {
-      await _loadMock();
+      await _loadMock(config: config);
       return;
     }
 
     final storage = ref.read(modelStorageProvider);
     if (!await storage.isDownloaded(model)) {
       await _loadMock(
+        config: config,
         usingFallback: true,
         note: '${model.name} is not downloaded yet.',
       );
@@ -132,31 +155,36 @@ class EngineController extends Notifier<EngineRuntimeState> {
         config: config,
         supportImage: model.supportsVision,
       );
+      _engine = engine;
       state = EngineRuntimeState(
         status: EngineStatus.ready,
         engine: engine,
         activeModelId: model.id,
+        activeConfig: config,
         displayName: model.name,
         kind: model.engineKind,
       );
     } on Object catch (e) {
       debugPrint('Engine load failed: $e');
-      await _loadMock(usingFallback: true, note: e.toString());
+      await _loadMock(config: config, usingFallback: true, note: e.toString());
     }
   }
 
   /// Reloads the active model picking up the latest generation config.
   Future<void> reloadActive() => activate(state.activeModelId);
 
-  Future<void> _loadMock({bool usingFallback = false, String? note}) async {
+  Future<void> _loadMock({
+    required GenerationConfig config,
+    bool usingFallback = false,
+    String? note,
+  }) async {
     final engine = EngineFactory.mock();
-    await engine.load(
-      modelPath: '',
-      config: ref.read(settingsProvider).generationConfig,
-    );
+    await engine.load(modelPath: '', config: config);
+    _engine = engine;
     state = EngineRuntimeState(
       status: EngineStatus.ready,
       engine: engine,
+      activeConfig: config,
       usingFallback: usingFallback,
       error: note,
     );

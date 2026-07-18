@@ -6,6 +6,7 @@ import 'package:manthan/core/constants/app_info.dart';
 import 'package:manthan/features/inference/application/engine_controller.dart';
 import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
+import 'package:manthan/shared/widgets/labeled_slider.dart';
 
 /// App configuration: appearance, generation parameters, tokens, and about.
 class SettingsPage extends ConsumerWidget {
@@ -142,7 +143,7 @@ class _GenerationControls extends StatelessWidget {
       title: const Text('Generation parameters'),
       childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
       children: <Widget>[
-        _SliderTile(
+        LabeledSlider(
           label: 'Temperature',
           value: config.temperature,
           min: 0,
@@ -151,7 +152,7 @@ class _GenerationControls extends StatelessWidget {
           display: config.temperature.toStringAsFixed(2),
           onChanged: (v) => onChanged(config.copyWith(temperature: v)),
         ),
-        _SliderTile(
+        LabeledSlider(
           label: 'Top-K',
           value: config.topK.toDouble(),
           min: 1,
@@ -160,7 +161,7 @@ class _GenerationControls extends StatelessWidget {
           display: '${config.topK}',
           onChanged: (v) => onChanged(config.copyWith(topK: v.round())),
         ),
-        _SliderTile(
+        LabeledSlider(
           label: 'Top-P',
           value: config.topP,
           min: 0,
@@ -169,7 +170,7 @@ class _GenerationControls extends StatelessWidget {
           display: config.topP.toStringAsFixed(2),
           onChanged: (v) => onChanged(config.copyWith(topP: v)),
         ),
-        _SliderTile(
+        LabeledSlider(
           label: 'Max tokens',
           value: config.maxTokens.toDouble(),
           min: 256,
@@ -188,50 +189,6 @@ class _GenerationControls extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-      ],
-    );
-  }
-}
-
-class _SliderTile extends StatelessWidget {
-  const _SliderTile({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.divisions,
-    required this.display,
-    required this.onChanged,
-  });
-
-  final String label;
-  final double value;
-  final double min;
-  final double max;
-  final int divisions;
-  final String display;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            Text(label, style: theme.textTheme.labelLarge),
-            const Spacer(),
-            Text(display, style: theme.textTheme.labelLarge),
-          ],
-        ),
-        Slider(
-          value: value.clamp(min, max),
-          min: min,
-          max: max,
-          divisions: divisions,
-          onChanged: onChanged,
-        ),
       ],
     );
   }

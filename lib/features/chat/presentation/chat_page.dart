@@ -10,6 +10,7 @@ import 'package:manthan/features/chat/application/chat_controller.dart';
 import 'package:manthan/features/chat/domain/chat_message.dart';
 import 'package:manthan/features/chat/domain/chat_session.dart';
 import 'package:manthan/features/chat/presentation/widgets/chat_input.dart';
+import 'package:manthan/features/chat/presentation/widgets/conversation_settings_sheet.dart';
 import 'package:manthan/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:manthan/features/chat/presentation/widgets/sessions_drawer.dart';
 import 'package:manthan/features/inference/application/engine_controller.dart';
@@ -71,6 +72,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           ],
         ),
         actions: <Widget>[
+          if (active != null)
+            IconButton(
+              tooltip: 'Conversation settings',
+              icon: Icon(
+                active.hasCustomEngineSettings
+                    ? Icons.tune
+                    : Icons.tune_outlined,
+              ),
+              onPressed: () =>
+                  showConversationSettingsSheet(context, session: active),
+            ),
           IconButton(
             tooltip: active?.documentScoped ?? false
                 ? 'Document grounding on'

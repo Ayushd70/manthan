@@ -20,6 +20,7 @@ class EngineRuntimeState extends Equatable {
     this.status = EngineStatus.idle,
     this.engine,
     this.activeModelId,
+    this.requestedModelId,
     this.activeConfig = const GenerationConfig(),
     this.displayName = 'Built-in demo model',
     this.kind = EngineKind.mock,
@@ -35,6 +36,12 @@ class EngineRuntimeState extends Equatable {
 
   /// Catalog id of the loaded model (null for the mock engine).
   final String? activeModelId;
+
+  /// Catalog id most recently requested via [EngineController.activate],
+  /// even if it fell back to the mock engine (e.g. not downloaded). Used to
+  /// detect "should we retry" without confusing a deliberate fallback for a
+  /// pending switch.
+  final String? requestedModelId;
 
   /// Generation config the engine was loaded with (global or a
   /// per-conversation override), so callers can detect a mismatch.
@@ -59,6 +66,7 @@ class EngineRuntimeState extends Equatable {
     EngineStatus? status,
     LlmEngine? engine,
     String? Function()? activeModelId,
+    String? Function()? requestedModelId,
     GenerationConfig? activeConfig,
     String? displayName,
     EngineKind? kind,
@@ -71,6 +79,9 @@ class EngineRuntimeState extends Equatable {
       activeModelId: activeModelId != null
           ? activeModelId()
           : this.activeModelId,
+      requestedModelId: requestedModelId != null
+          ? requestedModelId()
+          : this.requestedModelId,
       activeConfig: activeConfig ?? this.activeConfig,
       displayName: displayName ?? this.displayName,
       kind: kind ?? this.kind,
@@ -83,6 +94,7 @@ class EngineRuntimeState extends Equatable {
   List<Object?> get props => <Object?>[
     status,
     activeModelId,
+    requestedModelId,
     activeConfig,
     displayName,
     kind,
@@ -97,6 +109,11 @@ class EngineController extends Notifier<EngineRuntimeState> {
   // the provider has already been torn down, so reading `state` there is
   // disallowed by Riverpod.
   LlmEngine? _engine;
+
+  // Guards against overlapping activate() calls (e.g. the startup
+  // activation racing a session switch) clobbering each other's result —
+  // only the most recently *started* call is allowed to publish state.
+  int _activationToken = 0;
 
   @override
   EngineRuntimeState build() {
@@ -120,20 +137,26 @@ class EngineController extends Notifier<EngineRuntimeState> {
     String? modelId, {
     GenerationConfig? configOverride,
   }) async {
+    final token = ++_activationToken;
     final settings = ref.read(settingsProvider);
     final config = configOverride ?? settings.generationConfig;
 
     await _engine?.dispose();
+    if (token != _activationToken) return;
     _engine = null;
 
-    state = state.copyWith(status: EngineStatus.loading, error: () => null);
+    state = state.copyWith(
+      status: EngineStatus.loading,
+      requestedModelId: () => modelId,
+      error: () => null,
+    );
 
     final model = modelId == null ? null : ModelCatalog.byId(modelId);
 
     // Fall back to the always-available mock engine when no real model is
     // selected, or the selected file is not present on disk.
     if (model == null || model.engineKind == EngineKind.mock) {
-      await _loadMock(config: config);
+      await _loadMock(config: config, token: token);
       return;
     }
 
@@ -141,6 +164,7 @@ class EngineController extends Notifier<EngineRuntimeState> {
     if (!await storage.isDownloaded(model)) {
       await _loadMock(
         config: config,
+        token: token,
         usingFallback: true,
         note: '${model.name} is not downloaded yet.',
       );
@@ -155,18 +179,28 @@ class EngineController extends Notifier<EngineRuntimeState> {
         config: config,
         supportImage: model.supportsVision,
       );
+      if (token != _activationToken) {
+        await engine.dispose();
+        return;
+      }
       _engine = engine;
       state = EngineRuntimeState(
         status: EngineStatus.ready,
         engine: engine,
         activeModelId: model.id,
+        requestedModelId: modelId,
         activeConfig: config,
         displayName: model.name,
         kind: model.engineKind,
       );
     } on Object catch (e) {
       debugPrint('Engine load failed: $e');
-      await _loadMock(config: config, usingFallback: true, note: e.toString());
+      await _loadMock(
+        config: config,
+        token: token,
+        usingFallback: true,
+        note: e.toString(),
+      );
     }
   }
 
@@ -175,15 +209,21 @@ class EngineController extends Notifier<EngineRuntimeState> {
 
   Future<void> _loadMock({
     required GenerationConfig config,
+    required int token,
     bool usingFallback = false,
     String? note,
   }) async {
     final engine = EngineFactory.mock();
     await engine.load(modelPath: '', config: config);
+    if (token != _activationToken) {
+      await engine.dispose();
+      return;
+    }
     _engine = engine;
     state = EngineRuntimeState(
       status: EngineStatus.ready,
       engine: engine,
+      requestedModelId: state.requestedModelId,
       activeConfig: config,
       usingFallback: usingFallback,
       error: note,

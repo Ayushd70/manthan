@@ -8,6 +8,7 @@ import 'package:manthan/core/providers.dart';
 import 'package:manthan/features/chat/domain/chat_message.dart';
 import 'package:manthan/features/chat/domain/chat_session.dart';
 import 'package:manthan/features/inference/application/engine_controller.dart';
+import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/features/inference/domain/llm_engine.dart';
 import 'package:manthan/features/rag/application/rag_controller.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
@@ -79,13 +80,39 @@ class ChatController extends Notifier<ChatState> {
       documentScoped: documentScoped,
     );
     state = state.copyWith(active: () => session);
+    unawaited(_ensureEngineFor(session));
   }
 
   /// Opens an existing session by id.
   void selectSession(String id) {
     final repo = ref.read(chatRepositoryProvider);
     final session = repo.loadSession(id);
-    if (session != null) state = state.copyWith(active: () => session);
+    if (session == null) return;
+    state = state.copyWith(active: () => session);
+    unawaited(_ensureEngineFor(session));
+  }
+
+  /// Switches the loaded engine to match [session]'s pinned model and
+  /// generation overrides, if it isn't already there. A no-op when the
+  /// session follows the global defaults and those are already loaded.
+  Future<void> _ensureEngineFor(ChatSession session) async {
+    final runtime = ref.read(engineControllerProvider);
+    final settings = ref.read(settingsProvider);
+    final effectiveModelId = session.modelId ?? settings.activeModelId;
+    final effectiveConfig =
+        session.generationOverrides ?? settings.generationConfig;
+    final needsSwitch =
+        !runtime.isReady ||
+        runtime.requestedModelId != effectiveModelId ||
+        runtime.activeConfig != effectiveConfig;
+    if (!needsSwitch) return;
+
+    await ref
+        .read(engineControllerProvider.notifier)
+        .activate(
+          effectiveModelId,
+          configOverride: session.generationOverrides,
+        );
   }
 
   /// Deletes a session and selects the next available one.
@@ -111,6 +138,26 @@ class ChatController extends Notifier<ChatState> {
     state = state.copyWith(
       active: () => active.copyWith(documentScoped: enabled),
     );
+  }
+
+  /// Pins [modelId] to the active session (or clears the pin when null),
+  /// persisting the choice so it survives reopening the conversation.
+  void pinModel(String? modelId) {
+    final active = state.active;
+    if (active == null) return;
+    final updated = active.copyWith(modelId: () => modelId);
+    state = state.copyWith(active: () => updated);
+    ref.read(chatRepositoryProvider).saveSession(updated);
+  }
+
+  /// Replaces (or clears with null) the active session's sampling/system
+  /// prompt overrides. Applied on the next message sent in this chat.
+  void setGenerationOverrides(GenerationConfig? overrides) {
+    final active = state.active;
+    if (active == null) return;
+    final updated = active.copyWith(generationOverrides: () => overrides);
+    state = state.copyWith(active: () => updated);
+    ref.read(chatRepositoryProvider).saveSession(updated);
   }
 
   /// Sends a user [text] (with optional [images]) and streams the reply.
@@ -180,7 +227,7 @@ class ChatController extends Notifier<ChatState> {
     state = state.copyWith(active: () => session, isGenerating: true);
 
     await _streamResponse(
-      sessionId: session.id,
+      session: session,
       assistantId: assistantMessage.id,
       history: history,
       images: images,
@@ -198,20 +245,15 @@ class ChatController extends Notifier<ChatState> {
   }
 
   Future<void> _streamResponse({
-    required String sessionId,
+    required ChatSession session,
     required String assistantId,
     required List<ChatMessage> history,
     required List<Uint8List> images,
     required List<String> sources,
   }) async {
-    final engineController = ref.read(engineControllerProvider.notifier);
-    var runtime = ref.read(engineControllerProvider);
-    if (!runtime.isReady) {
-      await engineController.activate(
-        ref.read(engineControllerProvider).activeModelId,
-      );
-      runtime = ref.read(engineControllerProvider);
-    }
+    final sessionId = session.id;
+    await _ensureEngineFor(session);
+    final runtime = ref.read(engineControllerProvider);
     final engine = runtime.engine;
     if (engine == null) {
       _completeWithError(sessionId, assistantId, 'No engine available.');

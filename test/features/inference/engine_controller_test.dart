@@ -26,6 +26,9 @@ void main() {
       'activate falls back to the global generation config by default',
       () async {
         final notifier = container.read(engineControllerProvider.notifier);
+        // Let the build()-triggered startup activation settle first so it
+        // doesn't race with the explicit call below.
+        await pumpEventQueue();
 
         await notifier.activate(null);
 
@@ -38,6 +41,8 @@ void main() {
       'activate prefers an explicit configOverride over global settings',
       () async {
         final notifier = container.read(engineControllerProvider.notifier);
+        await pumpEventQueue();
+
         const override = GenerationConfig(
           temperature: 0.1,
           systemPrompt: 'Pinned.',

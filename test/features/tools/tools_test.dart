@@ -43,7 +43,7 @@ void main() {
 
   group('DateTimeTool', () {
     test('returns a fixed clock value', () async {
-      final tool = DateTimeTool(clock: () => DateTime(2026, 8, 7, 20, 5, 0));
+      final tool = DateTimeTool(clock: () => DateTime(2026, 8, 7, 20, 5));
       final result = await tool.execute(const <String, Object?>{
         'part': 'both',
       });
@@ -75,7 +75,7 @@ void main() {
   group('ToolRegistry', () {
     test('executes registered tools and errors on unknown', () async {
       final registry = ToolRegistry.builtins(
-        clock: () => DateTime(2026, 1, 1),
+        clock: () => DateTime(2026),
       );
       final ok = await registry.execute(
         const ToolCall(name: 'calculator', arguments: {'expression': '1+1'}),

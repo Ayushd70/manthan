@@ -63,7 +63,11 @@ class MockLlmEngine implements LlmEngine {
             ),
     );
 
-    final reply = _composeReply(lastUser.text, hasImage: images.isNotEmpty);
+    final reply = _composeReply(
+      lastUser.text,
+      hasImage: images.isNotEmpty,
+      history: history,
+    );
     final tokens = _tokenize(reply);
     for (final token in tokens) {
       if (_cancelled) return;
@@ -88,8 +92,36 @@ class MockLlmEngine implements LlmEngine {
     return regex.allMatches(text).map((m) => m.group(0)!).toList();
   }
 
-  String _composeReply(String prompt, {required bool hasImage}) {
-    final p = prompt.toLowerCase().trim();
+  String _composeReply(
+    String prompt, {
+    required bool hasImage,
+    required List<ChatMessage> history,
+  }) {
+    final toolResult = _latestToolResult(history);
+    if (toolResult != null) {
+      return _answerFromToolResult(toolResult);
+    }
+
+    final userText = _extractUserText(prompt);
+    final p = userText.toLowerCase().trim();
+
+    final calcExpression = _detectMathExpression(userText);
+    if (calcExpression != null) {
+      return '<tool_call>\n'
+          '{"name":"calculator","arguments":{"expression":"$calcExpression"}}\n'
+          '</tool_call>';
+    }
+
+    if (_asksForDateTime(p)) {
+      final part = p.contains('time') && !p.contains('date')
+          ? 'time'
+          : p.contains('date') && !p.contains('time')
+          ? 'date'
+          : 'both';
+      return '<tool_call>\n'
+          '{"name":"date_time","arguments":{"part":"$part"}}\n'
+          '</tool_call>';
+    }
 
     if (hasImage) {
       return "I can see the image you attached. Running on-device, I'd "
@@ -133,10 +165,89 @@ class MockLlmEngine implements LlmEngine {
           'You can verify this by enabling airplane mode — everything keeps '
           'working.';
     }
-    return 'You said: "$prompt".\n\n'
+    return 'You said: "$userText".\n\n'
         "This is Manthan's built-in demo engine, so the reply is simulated. "
         'Head to the **Models** tab to download a real on-device LLM '
         '(Gemma via LiteRT-LM, or any GGUF via llama.cpp) and switch engines '
         'in **Settings** to get genuine answers — fully offline.';
+  }
+
+  static String? _latestToolResult(List<ChatMessage> history) {
+    for (var i = history.length - 1; i >= 0; i--) {
+      final text = history[i].text;
+      if (text.startsWith('Tool result') || text.startsWith('Tool error')) {
+        return text;
+      }
+    }
+    return null;
+  }
+
+  static String _answerFromToolResult(String toolResult) {
+    final match = RegExp(r'Tool (?:result|error) \(([^)]+)\): (.*)').firstMatch(
+      toolResult.split('\n').first,
+    );
+    if (match == null) {
+      return 'Based on the tool output:\n\n$toolResult';
+    }
+    final name = match.group(1)!;
+    final output = match.group(2)!;
+    if (toolResult.startsWith('Tool error')) {
+      return 'I tried using **$name** but it failed: $output';
+    }
+    if (name == 'calculator') {
+      return 'The result is **$output**.';
+    }
+    if (name == 'date_time') {
+      return 'It is currently **$output** on this device.';
+    }
+    return '**$name** returned: $output';
+  }
+
+  /// Strips the tools/RAG wrappers ChatController may inject.
+  static String _extractUserText(String prompt) {
+    const markers = <String>[
+      'User message: ',
+      'Question: ',
+    ];
+    for (final marker in markers) {
+      final index = prompt.lastIndexOf(marker);
+      if (index >= 0) {
+        return prompt.substring(index + marker.length).trim();
+      }
+    }
+    return prompt.trim();
+  }
+
+  static final RegExp _mathProbe = RegExp(
+    r'(?:calculate|compute|what is|whats)\s+([-+(]?\d[\d\s+\-*/().%]*\d)',
+    caseSensitive: false,
+  );
+
+  static final RegExp _bareMath = RegExp(
+    r'^[-+(]?\d[\d\s+\-*/().%]*$',
+  );
+
+  static String? _detectMathExpression(String text) {
+    final trimmed = text.trim();
+    if (_bareMath.hasMatch(trimmed) && RegExp(r'[+\-*/%]').hasMatch(trimmed)) {
+      return trimmed.replaceAll(' ', '');
+    }
+    final match = _mathProbe.firstMatch(trimmed);
+    if (match == null) return null;
+    final expression = match.group(1)!.replaceAll(' ', '');
+    if (!RegExp(r'[+\-*/%]').hasMatch(expression)) return null;
+    return expression;
+  }
+
+  static bool _asksForDateTime(String lower) {
+    return lower.contains('what time') ||
+        lower.contains('what date') ||
+        lower.contains("what's the time") ||
+        lower.contains("what's the date") ||
+        lower.contains('current time') ||
+        lower.contains('current date') ||
+        lower.contains('what day') ||
+        lower == 'time' ||
+        lower == 'date';
   }
 }

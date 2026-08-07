@@ -39,10 +39,6 @@ void main() {
     });
 
     test('stop halts the stream early', () async {
-      await engine.load(
-        modelPath: '',
-        config: const GenerationConfig(),
-      );
       final engineSlow = MockLlmEngine(
         tokenDelay: const Duration(milliseconds: 50),
       );
@@ -54,8 +50,38 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 60));
       await engineSlow.stop();
       await sub.cancel();
-      // Should not have streamed the entire (long) response.
       expect(received.length, greaterThanOrEqualTo(0));
+    });
+
+    test('emits a calculator tool call for arithmetic prompts', () async {
+      await engine.load(modelPath: '', config: const GenerationConfig());
+      final buffer = StringBuffer();
+      await for (final chunk in engine.generate(<ChatMessage>[
+        _user('what is 12 * 7'),
+      ])) {
+        buffer.write(chunk.textDelta);
+      }
+      expect(buffer.toString(), contains('<tool_call>'));
+      expect(buffer.toString(), contains('calculator'));
+      expect(buffer.toString(), contains('12*7'));
+    });
+
+    test('answers from a tool result follow-up', () async {
+      await engine.load(modelPath: '', config: const GenerationConfig());
+      final buffer = StringBuffer();
+      await for (final chunk in engine.generate(<ChatMessage>[
+        _user('what is 2+2'),
+        ChatMessage(
+          id: 'a',
+          role: ChatRole.assistant,
+          text: '<tool_call>{"name":"calculator"}</tool_call>',
+          createdAt: DateTime(2026),
+        ),
+        _user('Tool result (calculator): 4'),
+      ])) {
+        buffer.write(chunk.textDelta);
+      }
+      expect(buffer.toString(), contains('4'));
     });
   });
 }

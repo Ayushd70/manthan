@@ -15,6 +15,7 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] Local history (persist, rename, delete, share/export as Markdown)
 - [x] Prompt library: save, edit, and apply reusable system prompts
 - [x] Per-conversation model pinning & generation presets
+- [x] First-run onboarding (explain "100% offline", suggest a starter model)
 - [x] CI (analyze + test + Android/desktop builds) and release workflow
 
 ## Next sprint (priority order)
@@ -46,12 +47,17 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] `ConversationSettingsSheet` (AppBar action) to pin a model or enable a
       custom temperature/top-k/top-p/system-prompt preset per chat
 
+### 6. First-run onboarding — shipped
+- [x] `hasCompletedOnboarding` flag in `AppSettings` / SharedPreferences
+- [x] `/onboarding` pager (privacy, how it works, starter model) gated by
+      GoRouter redirect; skipped for `MANTHAN_DEMO` builds
+- [x] CTAs: start with demo engine or jump to Models for Gemma 3 1B
+
 ## Backlog
 
 - [ ] Whisper.cpp STT backend (fully offline transcription behind `SpeechRecognizer`)
 - [ ] Function calling / tools (calculator, date/time, on-device utilities)
 - [ ] Encrypted-at-rest storage for chats & documents
-- [ ] First-run onboarding (explain "100% offline", suggest a starter model)
 - [ ] Golden tests + automated screenshot capture in CI
 
 ## Working notes

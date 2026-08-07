@@ -16,7 +16,9 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('sends a message and receives a streamed reply', (tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'settings.hasCompletedOnboarding': true,
+    });
     final objectBox = await ObjectBox.open();
     final prefs = await SharedPreferences.getInstance();
 

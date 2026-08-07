@@ -13,6 +13,7 @@ class ManthanApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final router = ref.watch(routerProvider);
 
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
@@ -29,7 +30,7 @@ class ManthanApp extends ConsumerWidget {
             Brightness.dark,
             useDynamic ? darkDynamic?.harmonized() : null,
           ),
-          routerConfig: appRouter,
+          routerConfig: router,
         );
       },
     );

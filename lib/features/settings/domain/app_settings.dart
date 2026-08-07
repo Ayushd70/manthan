@@ -11,6 +11,7 @@ class AppSettings extends Equatable {
     this.huggingFaceToken,
     this.useDynamicColor = true,
     this.autoSpeakReplies = false,
+    this.hasCompletedOnboarding = false,
   });
 
   /// Light / dark / system theme.
@@ -31,6 +32,9 @@ class AppSettings extends Equatable {
   /// When true, assistant replies are read aloud after generation completes.
   final bool autoSpeakReplies;
 
+  /// Whether the first-run onboarding flow has been completed.
+  final bool hasCompletedOnboarding;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     String? Function()? activeModelId,
@@ -38,6 +42,7 @@ class AppSettings extends Equatable {
     String? Function()? huggingFaceToken,
     bool? useDynamicColor,
     bool? autoSpeakReplies,
+    bool? hasCompletedOnboarding,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -50,6 +55,8 @@ class AppSettings extends Equatable {
           : this.huggingFaceToken,
       useDynamicColor: useDynamicColor ?? this.useDynamicColor,
       autoSpeakReplies: autoSpeakReplies ?? this.autoSpeakReplies,
+      hasCompletedOnboarding:
+          hasCompletedOnboarding ?? this.hasCompletedOnboarding,
     );
   }
 
@@ -61,5 +68,6 @@ class AppSettings extends Equatable {
     huggingFaceToken,
     useDynamicColor,
     autoSpeakReplies,
+    hasCompletedOnboarding,
   ];
 }

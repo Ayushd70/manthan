@@ -32,6 +32,11 @@ void main() {
       expect(ModelCatalog.byId('does-not-exist'), isNull);
     });
 
+    test('starter model resolves from the chat catalog', () {
+      expect(ModelCatalog.starter.id, ModelCatalog.starterModelId);
+      expect(ModelCatalog.all, contains(ModelCatalog.starter));
+    });
+
     test('at least one vision-capable model exists', () {
       expect(ModelCatalog.all.any((m) => m.supportsVision), isTrue);
     });

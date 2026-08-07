@@ -118,6 +118,12 @@ abstract final class ModelCatalog {
   /// Every model the download manager tracks (chat + embedding).
   static List<ModelInfo> get managed => <ModelInfo>[...all, embedding];
 
+  /// Suggested starter chat model for first-run onboarding.
+  static const String starterModelId = 'gemma3-1b-it-int4';
+
+  /// Catalog entry for [starterModelId].
+  static ModelInfo get starter => byId(starterModelId)!;
+
   /// Looks up a catalog entry by [id], or null if unknown.
   static ModelInfo? byId(String id) {
     for (final m in all) {

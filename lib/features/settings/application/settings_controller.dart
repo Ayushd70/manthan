@@ -12,6 +12,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kHfToken = 'settings.hfToken';
   static const _kDynamicColor = 'settings.dynamicColor';
   static const _kAutoSpeak = 'settings.autoSpeakReplies';
+  static const _kOnboardingDone = 'settings.hasCompletedOnboarding';
   static const _kTemperature = 'settings.temperature';
   static const _kTopK = 'settings.topK';
   static const _kTopP = 'settings.topP';
@@ -33,6 +34,7 @@ class SettingsController extends Notifier<AppSettings> {
       huggingFaceToken: _prefs.getString(_kHfToken),
       useDynamicColor: _prefs.getBool(_kDynamicColor) ?? true,
       autoSpeakReplies: _prefs.getBool(_kAutoSpeak) ?? false,
+      hasCompletedOnboarding: _prefs.getBool(_kOnboardingDone) ?? false,
       generationConfig: GenerationConfig(
         temperature: _prefs.getDouble(_kTemperature) ?? 0.8,
         topK: _prefs.getInt(_kTopK) ?? 40,
@@ -59,6 +61,12 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> setAutoSpeakReplies({required bool enabled}) async {
     state = state.copyWith(autoSpeakReplies: enabled);
     await _prefs.setBool(_kAutoSpeak, enabled);
+  }
+
+  /// Marks the first-run onboarding flow as completed.
+  Future<void> completeOnboarding() async {
+    state = state.copyWith(hasCompletedOnboarding: true);
+    await _prefs.setBool(_kOnboardingDone, true);
   }
 
   /// Sets (or clears with null) the active model id.

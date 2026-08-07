@@ -13,6 +13,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kDynamicColor = 'settings.dynamicColor';
   static const _kAutoSpeak = 'settings.autoSpeakReplies';
   static const _kOnboardingDone = 'settings.hasCompletedOnboarding';
+  static const _kToolsEnabled = 'settings.toolsEnabled';
   static const _kTemperature = 'settings.temperature';
   static const _kTopK = 'settings.topK';
   static const _kTopP = 'settings.topP';
@@ -35,6 +36,7 @@ class SettingsController extends Notifier<AppSettings> {
       useDynamicColor: _prefs.getBool(_kDynamicColor) ?? true,
       autoSpeakReplies: _prefs.getBool(_kAutoSpeak) ?? false,
       hasCompletedOnboarding: _prefs.getBool(_kOnboardingDone) ?? false,
+      toolsEnabled: _prefs.getBool(_kToolsEnabled) ?? true,
       generationConfig: GenerationConfig(
         temperature: _prefs.getDouble(_kTemperature) ?? 0.8,
         topK: _prefs.getInt(_kTopK) ?? 40,
@@ -67,6 +69,12 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> completeOnboarding() async {
     state = state.copyWith(hasCompletedOnboarding: true);
     await _prefs.setBool(_kOnboardingDone, true);
+  }
+
+  /// Enables or disables on-device tool calling in chat.
+  Future<void> setToolsEnabled({required bool enabled}) async {
+    state = state.copyWith(toolsEnabled: enabled);
+    await _prefs.setBool(_kToolsEnabled, enabled);
   }
 
   /// Sets (or clears with null) the active model id.

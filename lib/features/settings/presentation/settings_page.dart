@@ -65,6 +65,17 @@ class SettingsPage extends ConsumerWidget {
             onChanged: (v) => controller.setAutoSpeakReplies(enabled: v),
           ),
           const Divider(),
+          const _SectionHeader('Tools'),
+          SwitchListTile(
+            secondary: const Icon(Icons.build_outlined),
+            title: const Text('On-device tools'),
+            subtitle: const Text(
+              'Let the model use a calculator and the device clock',
+            ),
+            value: settings.toolsEnabled,
+            onChanged: (v) => controller.setToolsEnabled(enabled: v),
+          ),
+          const Divider(),
           const _SectionHeader('Engine'),
           ListTile(
             leading: const Icon(Icons.memory),

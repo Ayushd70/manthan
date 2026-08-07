@@ -12,6 +12,7 @@ class AppSettings extends Equatable {
     this.useDynamicColor = true,
     this.autoSpeakReplies = false,
     this.hasCompletedOnboarding = false,
+    this.toolsEnabled = true,
   });
 
   /// Light / dark / system theme.
@@ -35,6 +36,9 @@ class AppSettings extends Equatable {
   /// Whether the first-run onboarding flow has been completed.
   final bool hasCompletedOnboarding;
 
+  /// When true, the chat loop may invoke on-device tools (calculator, clock).
+  final bool toolsEnabled;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     String? Function()? activeModelId,
@@ -43,6 +47,7 @@ class AppSettings extends Equatable {
     bool? useDynamicColor,
     bool? autoSpeakReplies,
     bool? hasCompletedOnboarding,
+    bool? toolsEnabled,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -57,6 +62,7 @@ class AppSettings extends Equatable {
       autoSpeakReplies: autoSpeakReplies ?? this.autoSpeakReplies,
       hasCompletedOnboarding:
           hasCompletedOnboarding ?? this.hasCompletedOnboarding,
+      toolsEnabled: toolsEnabled ?? this.toolsEnabled,
     );
   }
 
@@ -69,5 +75,6 @@ class AppSettings extends Equatable {
     useDynamicColor,
     autoSpeakReplies,
     hasCompletedOnboarding,
+    toolsEnabled,
   ];
 }

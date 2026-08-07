@@ -142,7 +142,7 @@ class EngineController extends Notifier<EngineRuntimeState> {
     final config = configOverride ?? settings.generationConfig;
 
     await _engine?.dispose();
-    if (token != _activationToken) return;
+    if (token != _activationToken || !ref.mounted) return;
     _engine = null;
 
     state = state.copyWith(
@@ -179,7 +179,7 @@ class EngineController extends Notifier<EngineRuntimeState> {
         config: config,
         supportImage: model.supportsVision,
       );
-      if (token != _activationToken) {
+      if (token != _activationToken || !ref.mounted) {
         await engine.dispose();
         return;
       }
@@ -213,9 +213,10 @@ class EngineController extends Notifier<EngineRuntimeState> {
     bool usingFallback = false,
     String? note,
   }) async {
+    final requestedModelId = state.requestedModelId;
     final engine = EngineFactory.mock();
     await engine.load(modelPath: '', config: config);
-    if (token != _activationToken) {
+    if (token != _activationToken || !ref.mounted) {
       await engine.dispose();
       return;
     }
@@ -223,7 +224,7 @@ class EngineController extends Notifier<EngineRuntimeState> {
     state = EngineRuntimeState(
       status: EngineStatus.ready,
       engine: engine,
-      requestedModelId: state.requestedModelId,
+      requestedModelId: requestedModelId,
       activeConfig: config,
       usingFallback: usingFallback,
       error: note,

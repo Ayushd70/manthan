@@ -10,8 +10,9 @@ abstract final class ToolPromptBuilder {
 
     final catalog = StringBuffer();
     for (final tool in tools) {
-      catalog.writeln('- ${tool.name}: ${tool.description}');
-      catalog.writeln('  parameters: ${jsonEncode(tool.parameters)}');
+      catalog
+        ..writeln('- ${tool.name}: ${tool.description}')
+        ..writeln('  parameters: ${jsonEncode(tool.parameters)}');
     }
 
     return '''

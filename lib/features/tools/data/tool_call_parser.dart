@@ -5,7 +5,7 @@ import 'package:manthan/features/tools/domain/on_device_tool.dart';
 /// Parses model-emitted tool invocations from free-form assistant text.
 ///
 /// Recognizes fenced blocks:
-/// ```
+/// ```xml
 /// <tool_call>
 /// {"name":"calculator","arguments":{"expression":"2+2"}}
 /// </tool_call>

@@ -9,6 +9,8 @@ import 'package:manthan/features/inference/application/engine_controller.dart';
 import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
 import 'package:manthan/features/settings/domain/app_settings.dart';
+import 'package:manthan/features/voice/application/tts_controller.dart';
+import 'package:manthan/features/voice/domain/speech_synthesizer.dart';
 
 class _FakeChatRepository implements ChatRepository {
   final Map<String, ChatSession> _sessions = <String, ChatSession>{};
@@ -41,6 +43,26 @@ class _FakeSettingsController extends SettingsController {
   AppSettings build() => const AppSettings();
 }
 
+class _FakeSpeechSynthesizer implements SpeechSynthesizer {
+  @override
+  Future<bool> initialize() async => true;
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  bool get isSpeaking => false;
+
+  @override
+  Future<void> speak(String text) async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  void setCompletionHandler(void Function()? onComplete) {}
+}
+
 void main() {
   group('ChatController', () {
     late ProviderContainer container;
@@ -52,6 +74,7 @@ void main() {
         overrides: [
           chatRepositoryProvider.overrideWithValue(repo),
           settingsProvider.overrideWith(_FakeSettingsController.new),
+          speechSynthesizerProvider.overrideWithValue(_FakeSpeechSynthesizer()),
         ],
       );
       addTearDown(container.dispose);
@@ -123,6 +146,24 @@ void main() {
       // than crashing — but the *request* is still tracked for comparison
       // on the next message/session switch.
       expect(runtime.activeModelId, isNull);
+    });
+
+    test('sendMessage runs calculator tool loop for math prompts', () async {
+      container.read(engineControllerProvider);
+      await pumpEventQueue();
+
+      await controller().sendMessage('what is 12 * 7');
+      await pumpEventQueue(times: 50);
+
+      // Wait until generation finishes (tool call + follow-up).
+      for (var i = 0; i < 40 && state().isGenerating; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+
+      final text = state().active?.messages.last.text ?? '';
+      expect(state().isGenerating, isFalse);
+      expect(text, contains('84'));
+      expect(text, isNot(contains('<tool_call>')));
     });
   });
 }

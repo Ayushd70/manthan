@@ -12,6 +12,10 @@ import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/features/inference/domain/llm_engine.dart';
 import 'package:manthan/features/rag/application/rag_controller.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
+import 'package:manthan/features/tools/data/tool_call_parser.dart';
+import 'package:manthan/features/tools/data/tool_prompt_builder.dart';
+import 'package:manthan/features/tools/data/tool_registry.dart';
+import 'package:manthan/features/tools/domain/on_device_tool.dart';
 import 'package:manthan/features/voice/application/tts_controller.dart';
 import 'package:uuid/uuid.dart';
 
@@ -260,54 +264,141 @@ class ChatController extends Notifier<ChatState> {
       return;
     }
 
-    final buffer = StringBuffer();
+    final toolsEnabled = ref.read(settingsProvider).toolsEnabled;
+    final registry = ref.read(toolRegistryProvider);
+    final toolsAppendix = toolsEnabled
+        ? ToolPromptBuilder.build(registry.tools)
+        : '';
+
+    var workingHistory = toolsAppendix.isEmpty
+        ? history
+        : _injectTools(history, toolsAppendix);
+
+    const maxToolRounds = 3;
     final stopwatch = Stopwatch()..start();
     var tokenCount = 0;
+    var displayText = '';
 
-    await _sub?.cancel();
-    final completer = Completer<void>();
-    _sub = engine
-        .generate(history, images: images)
-        .listen(
-          (chunk) {
-            if (chunk.isThinking) return;
-            buffer.write(chunk.textDelta);
-            tokenCount++;
-            _updateAssistant(
-              sessionId,
-              assistantId,
-              text: buffer.toString(),
-              isStreaming: true,
-              sources: sources,
-            );
-          },
-          onError: (Object error) {
-            _completeWithError(sessionId, assistantId, error.toString());
-            if (!completer.isCompleted) completer.complete();
-          },
-          onDone: () {
-            stopwatch.stop();
-            final seconds = stopwatch.elapsedMilliseconds / 1000.0;
-            final rate = seconds > 0 ? tokenCount / seconds : 0.0;
-            _updateAssistant(
-              sessionId,
-              assistantId,
-              text: buffer.isEmpty ? '(no output)' : buffer.toString(),
-              isStreaming: false,
-              tokensPerSecond: rate,
-              tokenCount: tokenCount,
-              sources: sources,
-              persist: true,
-            );
-            state = state.copyWith(isGenerating: false);
-            _sub = null;
-            _maybeAutoSpeak(assistantId, buffer.toString());
-            if (!completer.isCompleted) completer.complete();
-          },
-          cancelOnError: true,
-        );
+    for (var round = 0; round <= maxToolRounds; round++) {
+      final buffer = StringBuffer();
+      final roundComplete = Completer<void>();
+      var failed = false;
 
-    await completer.future;
+      await _sub?.cancel();
+      _sub = engine
+          .generate(
+            workingHistory,
+            images: round == 0 ? images : const <Uint8List>[],
+          )
+          .listen(
+            (chunk) {
+              if (chunk.isThinking) return;
+              buffer.write(chunk.textDelta);
+              tokenCount++;
+              final preview = toolsEnabled
+                  ? ToolCallParser.stripToolCalls(buffer.toString())
+                  : buffer.toString();
+              displayText = preview.isEmpty
+                  ? (ToolCallParser.hasToolCall(buffer.toString())
+                        ? '_Using on-device tools…_'
+                        : buffer.toString())
+                  : preview;
+              _updateAssistant(
+                sessionId,
+                assistantId,
+                text: displayText,
+                isStreaming: true,
+                sources: sources,
+              );
+            },
+            onError: (Object error) {
+              failed = true;
+              _completeWithError(sessionId, assistantId, error.toString());
+              if (!roundComplete.isCompleted) roundComplete.complete();
+            },
+            onDone: () {
+              if (!roundComplete.isCompleted) roundComplete.complete();
+            },
+            cancelOnError: true,
+          );
+
+      await roundComplete.future;
+      _sub = null;
+      if (failed) return;
+
+      final raw = buffer.toString();
+      final calls = toolsEnabled && round < maxToolRounds
+          ? ToolCallParser.parse(raw)
+          : const <ToolCall>[];
+
+      if (calls.isEmpty) {
+        displayText = toolsEnabled
+            ? (ToolCallParser.stripToolCalls(raw).isEmpty
+                  ? (raw.isEmpty ? '(no output)' : raw)
+                  : ToolCallParser.stripToolCalls(raw))
+            : (raw.isEmpty ? '(no output)' : raw);
+        break;
+      }
+
+      final results = <ToolResult>[];
+      for (final call in calls) {
+        results.add(await registry.execute(call));
+      }
+      final resultText = ToolPromptBuilder.formatResults(results);
+      displayText = '_Used ${calls.map((c) => c.name).toSet().join(', ')}…_';
+      _updateAssistant(
+        sessionId,
+        assistantId,
+        text: displayText,
+        isStreaming: true,
+        sources: sources,
+      );
+
+      workingHistory = <ChatMessage>[
+        ...workingHistory,
+        ChatMessage(
+          id: _uuid.v4(),
+          role: ChatRole.assistant,
+          text: raw,
+          createdAt: DateTime.now(),
+        ),
+        ChatMessage(
+          id: _uuid.v4(),
+          role: ChatRole.user,
+          text: resultText,
+          createdAt: DateTime.now(),
+        ),
+      ];
+    }
+
+    stopwatch.stop();
+    final seconds = stopwatch.elapsedMilliseconds / 1000.0;
+    final rate = seconds > 0 ? tokenCount / seconds : 0.0;
+    final finalText = displayText.isEmpty ? '(no output)' : displayText;
+    _updateAssistant(
+      sessionId,
+      assistantId,
+      text: finalText,
+      isStreaming: false,
+      tokensPerSecond: rate,
+      tokenCount: tokenCount,
+      sources: sources,
+      persist: true,
+    );
+    state = state.copyWith(isGenerating: false);
+    _maybeAutoSpeak(assistantId, finalText);
+  }
+
+  List<ChatMessage> _injectTools(
+    List<ChatMessage> messages,
+    String toolsAppendix,
+  ) {
+    if (messages.isEmpty || toolsAppendix.isEmpty) return messages;
+    final last = messages.last;
+    final enhanced = last.copyWith(
+      text: '$toolsAppendix\n\nUser message: ${last.text}',
+    );
+    return <ChatMessage>[...messages.sublist(0, messages.length - 1), enhanced];
   }
 
   void _updateAssistant(

@@ -24,8 +24,7 @@ void main() {
         ),
         GoRoute(
           path: Routes.chat,
-          builder: (context, state) =>
-              const Scaffold(body: Text('chat-home')),
+          builder: (context, state) => const Scaffold(body: Text('chat-home')),
         ),
         GoRoute(
           path: Routes.models,

@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:manthan/app/app.dart';
 import 'package:manthan/core/providers.dart';
-import 'package:manthan/data/local/field_cipher.dart';
 import 'package:manthan/data/local/object_box.dart';
 import 'package:manthan/data/local/secure_key_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:manthan/features/inference/domain/generation_config.dart';
+import 'package:manthan/features/voice/domain/stt_backend.dart';
 
 /// User-configurable application settings, persisted across launches.
 class AppSettings extends Equatable {
@@ -13,6 +14,7 @@ class AppSettings extends Equatable {
     this.autoSpeakReplies = false,
     this.hasCompletedOnboarding = false,
     this.toolsEnabled = true,
+    this.sttBackend = SttBackend.platform,
   });
 
   /// Light / dark / system theme.
@@ -39,6 +41,9 @@ class AppSettings extends Equatable {
   /// When true, the chat loop may invoke on-device tools (calculator, clock).
   final bool toolsEnabled;
 
+  /// Speech-to-text backend used by the chat mic.
+  final SttBackend sttBackend;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     String? Function()? activeModelId,
@@ -48,6 +53,7 @@ class AppSettings extends Equatable {
     bool? autoSpeakReplies,
     bool? hasCompletedOnboarding,
     bool? toolsEnabled,
+    SttBackend? sttBackend,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -63,6 +69,7 @@ class AppSettings extends Equatable {
       hasCompletedOnboarding:
           hasCompletedOnboarding ?? this.hasCompletedOnboarding,
       toolsEnabled: toolsEnabled ?? this.toolsEnabled,
+      sttBackend: sttBackend ?? this.sttBackend,
     );
   }
 
@@ -76,5 +83,6 @@ class AppSettings extends Equatable {
     autoSpeakReplies,
     hasCompletedOnboarding,
     toolsEnabled,
+    sttBackend,
   ];
 }

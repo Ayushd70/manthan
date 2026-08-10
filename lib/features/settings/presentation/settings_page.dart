@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:manthan/core/constants/app_info.dart';
 import 'package:manthan/features/inference/application/engine_controller.dart';
 import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
+import 'package:manthan/features/voice/domain/stt_backend.dart';
 import 'package:manthan/shared/widgets/labeled_slider.dart';
 
 /// App configuration: appearance, generation parameters, tokens, and about.
@@ -64,6 +67,34 @@ class SettingsPage extends ConsumerWidget {
             value: settings.autoSpeakReplies,
             onChanged: (v) => controller.setAutoSpeakReplies(enabled: v),
           ),
+          ListTile(
+            leading: const Icon(Icons.mic_none_outlined),
+            title: const Text('Speech-to-text'),
+            subtitle: Text(
+              settings.sttBackend == SttBackend.whisper
+                  ? 'Whisper (offline — coming soon)'
+                  : 'Platform recognizer',
+            ),
+            trailing: DropdownButton<SttBackend>(
+              value: settings.sttBackend,
+              underline: const SizedBox.shrink(),
+              onChanged: (value) {
+                if (value != null) {
+                  unawaited(controller.setSttBackend(value));
+                }
+              },
+              items: const <DropdownMenuItem<SttBackend>>[
+                DropdownMenuItem(
+                  value: SttBackend.platform,
+                  child: Text('Platform'),
+                ),
+                DropdownMenuItem(
+                  value: SttBackend.whisper,
+                  child: Text('Whisper'),
+                ),
+              ],
+            ),
+          ),
           const Divider(),
           const _SectionHeader('Tools'),
           SwitchListTile(
@@ -119,6 +150,15 @@ class SettingsPage extends ConsumerWidget {
             leading: Icon(Icons.lock_outline),
             title: Text('100% on-device'),
             subtitle: Text(AppInfo.description),
+          ),
+          const ListTile(
+            leading: Icon(Icons.enhanced_encryption_outlined),
+            title: Text('Encrypted at rest'),
+            subtitle: Text(
+              'Chats, documents, and prompts are encrypted with a key kept '
+              'in the OS secure store. Embedding vectors stay plaintext for '
+              'local search.',
+            ),
           ),
           const ListTile(
             leading: Icon(Icons.info_outline),

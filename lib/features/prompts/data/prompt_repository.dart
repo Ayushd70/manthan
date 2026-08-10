@@ -1,12 +1,18 @@
 import 'package:manthan/data/local/entities.dart';
+import 'package:manthan/data/local/field_cipher.dart';
 import 'package:manthan/features/prompts/domain/saved_prompt.dart';
 import 'package:manthan/objectbox.g.dart';
 
 /// Persists user-saved system prompts.
 class PromptRepository {
-  PromptRepository(Store store) : _prompts = store.box<SavedPromptEntity>();
+  PromptRepository(
+    Store store, {
+    FieldCipher cipher = const PassthroughFieldCipher(),
+  }) : _prompts = store.box<SavedPromptEntity>(),
+       _cipher = cipher;
 
   final Box<SavedPromptEntity> _prompts;
+  final FieldCipher _cipher;
 
   /// Lists all saved prompts, newest first.
   List<SavedPrompt> list() {
@@ -28,8 +34,8 @@ class PromptRepository {
       SavedPromptEntity(
         id: existing?.id ?? 0,
         uid: prompt.id,
-        title: prompt.title,
-        content: prompt.content,
+        title: _cipher.encrypt(prompt.title),
+        content: _cipher.encrypt(prompt.content),
         createdAtMs: prompt.createdAt.millisecondsSinceEpoch,
       ),
     );
@@ -52,8 +58,8 @@ class PromptRepository {
 
   SavedPrompt _toDomain(SavedPromptEntity e) => SavedPrompt(
     id: e.uid,
-    title: e.title,
-    content: e.content,
+    title: _cipher.decrypt(e.title),
+    content: _cipher.decrypt(e.content),
     createdAt: DateTime.fromMillisecondsSinceEpoch(e.createdAtMs),
   );
 }

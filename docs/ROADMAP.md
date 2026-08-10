@@ -17,6 +17,8 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] Per-conversation model pinning & generation presets
 - [x] First-run onboarding (explain "100% offline", suggest a starter model)
 - [x] Function calling / tools (calculator, date/time, on-device utilities)
+- [x] Encrypted-at-rest storage for chats & documents
+- [x] Golden tests for core chat bubbles
 - [x] CI (analyze + test + Android/desktop builds) and release workflow
 
 ## Next sprint (priority order)
@@ -59,11 +61,25 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] Prompt-protocol `<tool_call>` parser and ChatController tool loop
 - [x] Settings toggle; mock engine exercises the loop for demos/tests
 
+### 8. Encrypted-at-rest storage — shipped
+- [x] AES-256-GCM `FieldCipher` with DEK in `FlutterSecureStorage`
+- [x] Chat / document / prompt string fields encrypted; dual-read of legacy
+      plaintext; one-shot migration via `storage.atRestVersion`
+- [x] Hugging Face token moved out of SharedPreferences into secure storage
+- [x] Embedding vectors left plaintext (required for ObjectBox HNSW search)
+
+### 9. Golden tests — shipped
+- [x] Deterministic golden harness (fixed size, seed theme, no GoogleFonts)
+- [x] MessageBubble user + assistant goldens under `test/goldens/`
+
+### 10. Whisper STT seam — partial
+- [x] `SttBackend` setting + `WhisperSpeechRecognizer` stub behind
+      `speechRecognizerProvider` (returns unavailable until model lands)
+- [ ] Bundle whisper.cpp / `whisper_ggml` + model download UX
+
 ## Backlog
 
 - [ ] Whisper.cpp STT backend (fully offline transcription behind `SpeechRecognizer`)
-- [ ] Encrypted-at-rest storage for chats & documents
-- [ ] Golden tests + automated screenshot capture in CI
 
 ## Working notes
 

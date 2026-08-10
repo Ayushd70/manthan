@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:manthan/core/providers.dart';
+import 'package:manthan/data/local/secure_key_store.dart';
 import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/features/settings/domain/app_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +13,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kThemeMode = 'settings.themeMode';
   static const _kActiveModel = 'settings.activeModelId';
   static const _kHfToken = 'settings.hfToken';
+  static const _kHfTokenSecure = 'manthan.hfToken';
   static const _kDynamicColor = 'settings.dynamicColor';
   static const _kAutoSpeak = 'settings.autoSpeakReplies';
   static const _kOnboardingDone = 'settings.hasCompletedOnboarding';
@@ -21,10 +25,14 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kSystemPrompt = 'settings.systemPrompt';
 
   late final SharedPreferences _prefs;
+  late final SecureKeyStore _secrets;
 
   @override
   AppSettings build() {
     _prefs = ref.watch(sharedPreferencesProvider);
+    _secrets = ref.watch(secureKeyStoreProvider);
+    // Kick off async secret hydration without blocking the first frame.
+    unawaited(_hydrateSecureToken());
     return _load();
   }
 
@@ -32,6 +40,7 @@ class SettingsController extends Notifier<AppSettings> {
     return AppSettings(
       themeMode: ThemeMode.values[_prefs.getInt(_kThemeMode) ?? 0],
       activeModelId: _prefs.getString(_kActiveModel),
+      // Prefer secure storage; fall back to legacy prefs until migration runs.
       huggingFaceToken: _prefs.getString(_kHfToken),
       useDynamicColor: _prefs.getBool(_kDynamicColor) ?? true,
       autoSpeakReplies: _prefs.getBool(_kAutoSpeak) ?? false,
@@ -45,6 +54,31 @@ class SettingsController extends Notifier<AppSettings> {
         systemPrompt: _prefs.getString(_kSystemPrompt),
       ),
     );
+  }
+
+  Future<void> _hydrateSecureToken() async {
+    try {
+      final secure = await _secrets.read(_kHfTokenSecure);
+      final legacy = _prefs.getString(_kHfToken);
+
+      if (secure != null && secure.isNotEmpty) {
+        if (state.huggingFaceToken != secure) {
+          state = state.copyWith(huggingFaceToken: () => secure);
+        }
+        if (legacy != null) {
+          await _prefs.remove(_kHfToken);
+        }
+        return;
+      }
+
+      if (legacy != null && legacy.isNotEmpty) {
+        await _secrets.write(_kHfTokenSecure, legacy);
+        await _prefs.remove(_kHfToken);
+        state = state.copyWith(huggingFaceToken: () => legacy);
+      }
+    } on Object {
+      // Secure storage can be unavailable in tests / some desktop setups.
+    }
   }
 
   /// Updates the theme mode.
@@ -91,10 +125,11 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> setHuggingFaceToken(String? token) async {
     final value = (token == null || token.trim().isEmpty) ? null : token.trim();
     state = state.copyWith(huggingFaceToken: () => value);
+    await _prefs.remove(_kHfToken);
     if (value == null) {
-      await _prefs.remove(_kHfToken);
+      await _secrets.delete(_kHfTokenSecure);
     } else {
-      await _prefs.setString(_kHfToken, value);
+      await _secrets.write(_kHfTokenSecure, value);
     }
   }
 

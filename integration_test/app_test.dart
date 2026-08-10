@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:manthan/app/app.dart';
 import 'package:manthan/core/providers.dart';
+import 'package:manthan/data/local/field_cipher.dart';
 import 'package:manthan/data/local/object_box.dart';
+import 'package:manthan/data/local/secure_key_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// End-to-end smoke test: launches the app with a real (temporary) ObjectBox
@@ -21,12 +23,16 @@ void main() {
     });
     final objectBox = await ObjectBox.open();
     final prefs = await SharedPreferences.getInstance();
+    final secrets = MemorySecureKeyStore();
+    final cipher = await FieldCipherFactory.open(secrets);
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           objectBoxProvider.overrideWithValue(objectBox),
           sharedPreferencesProvider.overrideWithValue(prefs),
+          secureKeyStoreProvider.overrideWithValue(secrets),
+          fieldCipherProvider.overrideWithValue(cipher),
         ],
         child: const ManthanApp(),
       ),

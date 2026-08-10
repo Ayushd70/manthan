@@ -6,6 +6,7 @@ import 'package:manthan/core/providers.dart';
 import 'package:manthan/data/local/secure_key_store.dart';
 import 'package:manthan/features/inference/domain/generation_config.dart';
 import 'package:manthan/features/settings/domain/app_settings.dart';
+import 'package:manthan/features/voice/domain/stt_backend.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Holds and persists [AppSettings].
@@ -18,6 +19,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kAutoSpeak = 'settings.autoSpeakReplies';
   static const _kOnboardingDone = 'settings.hasCompletedOnboarding';
   static const _kToolsEnabled = 'settings.toolsEnabled';
+  static const _kSttBackend = 'settings.sttBackend';
   static const _kTemperature = 'settings.temperature';
   static const _kTopK = 'settings.topK';
   static const _kTopP = 'settings.topP';
@@ -46,6 +48,7 @@ class SettingsController extends Notifier<AppSettings> {
       autoSpeakReplies: _prefs.getBool(_kAutoSpeak) ?? false,
       hasCompletedOnboarding: _prefs.getBool(_kOnboardingDone) ?? false,
       toolsEnabled: _prefs.getBool(_kToolsEnabled) ?? true,
+      sttBackend: SttBackend.values[_prefs.getInt(_kSttBackend) ?? 0],
       generationConfig: GenerationConfig(
         temperature: _prefs.getDouble(_kTemperature) ?? 0.8,
         topK: _prefs.getInt(_kTopK) ?? 40,
@@ -109,6 +112,12 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> setToolsEnabled({required bool enabled}) async {
     state = state.copyWith(toolsEnabled: enabled);
     await _prefs.setBool(_kToolsEnabled, enabled);
+  }
+
+  /// Selects the speech-to-text backend used by the chat mic.
+  Future<void> setSttBackend(SttBackend backend) async {
+    state = state.copyWith(sttBackend: backend);
+    await _prefs.setInt(_kSttBackend, backend.index);
   }
 
   /// Sets (or clears with null) the active model id.

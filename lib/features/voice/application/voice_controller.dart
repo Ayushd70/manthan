@@ -1,7 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:manthan/features/settings/application/settings_controller.dart';
 import 'package:manthan/features/voice/data/stt_speech_recognizer.dart';
+import 'package:manthan/features/voice/data/whisper_speech_recognizer.dart';
 import 'package:manthan/features/voice/domain/speech_recognizer.dart';
+import 'package:manthan/features/voice/domain/stt_backend.dart';
 
 /// Observable state of the voice input feature.
 class VoiceState extends Equatable {
@@ -73,10 +76,14 @@ class VoiceController extends Notifier<VoiceState> {
   }
 }
 
-/// Provides the speech recognizer implementation (swap to Whisper here).
-final speechRecognizerProvider = Provider<SpeechRecognizer>(
-  (ref) => SttSpeechRecognizer(),
-);
+/// Provides the speech recognizer implementation based on Settings.
+final speechRecognizerProvider = Provider<SpeechRecognizer>((ref) {
+  final backend = ref.watch(settingsProvider.select((s) => s.sttBackend));
+  return switch (backend) {
+    SttBackend.platform => SttSpeechRecognizer(),
+    SttBackend.whisper => WhisperSpeechRecognizer(),
+  };
+});
 
 /// Global voice provider.
 final voiceControllerProvider = NotifierProvider<VoiceController, VoiceState>(

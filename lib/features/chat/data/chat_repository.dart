@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:manthan/data/local/entities.dart';
+import 'package:manthan/data/local/field_cipher.dart';
 import 'package:manthan/features/chat/domain/chat_message.dart';
 import 'package:manthan/features/chat/domain/chat_session.dart';
 import 'package:manthan/features/inference/domain/generation_config.dart';
@@ -8,12 +9,16 @@ import 'package:manthan/objectbox.g.dart';
 
 /// Persists chat sessions and messages in ObjectBox.
 class ChatRepository {
-  ChatRepository(Store store)
-    : _sessions = store.box<ChatSessionEntity>(),
-      _messages = store.box<ChatMessageEntity>();
+  ChatRepository(
+    Store store, {
+    FieldCipher cipher = const PassthroughFieldCipher(),
+  }) : _sessions = store.box<ChatSessionEntity>(),
+       _messages = store.box<ChatMessageEntity>(),
+       _cipher = cipher;
 
   final Box<ChatSessionEntity> _sessions;
   final Box<ChatMessageEntity> _messages;
+  final FieldCipher _cipher;
 
   /// Returns all sessions (most recently updated first) without their messages.
   List<ChatSession> loadSessions() {
@@ -50,18 +55,19 @@ class ChatRepository {
   /// Inserts or updates a session (metadata only).
   void saveSession(ChatSession session) {
     final existing = _sessionByUid(session.id);
+    final overridesJson = session.generationOverrides == null
+        ? null
+        : jsonEncode(session.generationOverrides!.toJson());
     _sessions.put(
       ChatSessionEntity(
         id: existing?.id ?? 0,
         uid: session.id,
-        title: session.title,
+        title: _cipher.encrypt(session.title),
         createdAtMs: session.createdAt.millisecondsSinceEpoch,
         updatedAtMs: session.updatedAt.millisecondsSinceEpoch,
         modelId: session.modelId,
         documentScoped: session.documentScoped,
-        generationOverridesJson: session.generationOverrides == null
-            ? null
-            : jsonEncode(session.generationOverrides!.toJson()),
+        generationOverridesJson: _cipher.encryptNullable(overridesJson),
       ),
     );
   }
@@ -75,7 +81,7 @@ class ChatRepository {
         uid: message.id,
         sessionUid: sessionUid,
         role: message.role.index,
-        text: message.text,
+        text: _cipher.encrypt(message.text),
         createdAtMs: message.createdAt.millisecondsSinceEpoch,
         isError: message.isError,
         tokensPerSecond: message.tokensPerSecond,
@@ -119,12 +125,14 @@ class ChatRepository {
 
   ChatSession _toSessionShallow(ChatSessionEntity e) => ChatSession(
     id: e.uid,
-    title: e.title,
+    title: _cipher.decrypt(e.title),
     createdAt: DateTime.fromMillisecondsSinceEpoch(e.createdAtMs),
     updatedAt: DateTime.fromMillisecondsSinceEpoch(e.updatedAtMs),
     modelId: e.modelId,
     documentScoped: e.documentScoped,
-    generationOverrides: _decodeOverrides(e.generationOverridesJson),
+    generationOverrides: _decodeOverrides(
+      _cipher.decryptNullable(e.generationOverridesJson),
+    ),
   );
 
   GenerationConfig? _decodeOverrides(String? json) {
@@ -141,7 +149,7 @@ class ChatRepository {
   ChatMessage _toMessage(ChatMessageEntity e) => ChatMessage(
     id: e.uid,
     role: ChatRole.values[e.role],
-    text: e.text,
+    text: _cipher.decrypt(e.text),
     createdAt: DateTime.fromMillisecondsSinceEpoch(e.createdAtMs),
     isError: e.isError,
     tokensPerSecond: e.tokensPerSecond,

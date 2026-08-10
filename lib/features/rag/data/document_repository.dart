@@ -1,4 +1,5 @@
 import 'package:manthan/data/local/entities.dart';
+import 'package:manthan/data/local/field_cipher.dart';
 import 'package:manthan/features/rag/domain/document.dart';
 import 'package:manthan/objectbox.g.dart';
 
@@ -16,12 +17,16 @@ class EmbeddedChunk {
 /// Stores document chunks and performs nearest-neighbour retrieval using
 /// ObjectBox's native HNSW vector index.
 class DocumentRepository {
-  DocumentRepository(Store store)
-    : _documents = store.box<DocumentEntity>(),
-      _chunks = store.box<DocumentChunkEntity>();
+  DocumentRepository(
+    Store store, {
+    FieldCipher cipher = const PassthroughFieldCipher(),
+  }) : _documents = store.box<DocumentEntity>(),
+       _chunks = store.box<DocumentChunkEntity>(),
+       _cipher = cipher;
 
   final Box<DocumentEntity> _documents;
   final Box<DocumentChunkEntity> _chunks;
+  final FieldCipher _cipher;
 
   /// Persists a document and its embedded [chunks].
   void addDocument({
@@ -30,10 +35,11 @@ class DocumentRepository {
     required List<EmbeddedChunk> chunks,
     required int charCount,
   }) {
+    final encryptedTitle = _cipher.encrypt(title);
     _documents.put(
       DocumentEntity(
         uid: uid,
-        title: title,
+        title: encryptedTitle,
         addedAtMs: DateTime.now().millisecondsSinceEpoch,
         chunkCount: chunks.length,
         charCount: charCount,
@@ -43,8 +49,8 @@ class DocumentRepository {
       for (var i = 0; i < chunks.length; i++)
         DocumentChunkEntity(
           documentUid: uid,
-          documentTitle: title,
-          content: chunks[i].content,
+          documentTitle: encryptedTitle,
+          content: _cipher.encrypt(chunks[i].content),
           ordinal: i,
           embedding: chunks[i].embedding,
         ),
@@ -67,8 +73,8 @@ class DocumentRepository {
           .map(
             (r) => RetrievedChunk(
               documentId: r.object.documentUid,
-              documentTitle: r.object.documentTitle,
-              content: r.object.content,
+              documentTitle: _cipher.decrypt(r.object.documentTitle),
+              content: _cipher.decrypt(r.object.content),
               // ObjectBox returns distance; convert to a "higher is better"
               // score so the UI can rank intuitively.
               score: 1 / (1 + r.score),
@@ -92,7 +98,7 @@ class DocumentRepository {
           .map(
             (e) => DocumentInfo(
               id: e.uid,
-              title: e.title,
+              title: _cipher.decrypt(e.title),
               addedAt: DateTime.fromMillisecondsSinceEpoch(e.addedAtMs),
               chunkCount: e.chunkCount,
               charCount: e.charCount,
@@ -134,8 +140,15 @@ class DocumentRepository {
     _chunks.removeAll();
   }
 
-  /// All indexed chunks, for re-embedding when the embedder changes.
-  List<DocumentChunkEntity> allChunks() => _chunks.getAll();
+  /// Decrypted indexed chunks for re-embedding when the embedder changes.
+  List<({int id, String content})> allChunks() {
+    return _chunks
+        .getAll()
+        .map(
+          (c) => (id: c.id, content: _cipher.decrypt(c.content)),
+        )
+        .toList();
+  }
 
   /// Updates embeddings for existing chunks in place.
   void updateEmbeddings(Map<int, List<double>> byChunkId) {

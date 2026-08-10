@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:manthan/app/router.dart';
 import 'package:manthan/core/constants/app_info.dart';
 import 'package:manthan/core/providers.dart';
+import 'package:manthan/data/local/secure_key_store.dart';
 import 'package:manthan/features/models/domain/model_catalog.dart';
 import 'package:manthan/features/onboarding/presentation/onboarding_page.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
@@ -35,7 +36,10 @@ void main() {
     );
 
     final container = ProviderContainer(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        secureKeyStoreProvider.overrideWithValue(MemorySecureKeyStore()),
+      ],
     );
     addTearDown(container.dispose);
 

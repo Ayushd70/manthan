@@ -14,8 +14,10 @@ enum EngineKind {
   /// acceleration where available.
   llamaCpp,
 
-  /// whisper.cpp via `whisper_ggml` (`.bin` ggml) for fully offline speech-to-text.
-  whisper;
+  /// whisper.cpp via `whisper_ggml` (`.bin` ggml) for fully offline
+  /// speech-to-text.
+  whisper
+  ;
 
   /// Short human label.
   String get label => switch (this) {

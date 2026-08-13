@@ -7,6 +7,12 @@ analyzer:
     - "lib/objectbox.g.dart"
     - "objectbox-model.json"
     - "build/**"
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
   errors:
     # Generated/known-noise rules relaxed to keep CI signal high.
     todo: ignore

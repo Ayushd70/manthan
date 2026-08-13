@@ -17,6 +17,7 @@ import integration_test
 import large_file_handler
 import objectbox_flutter_libs
 import permission_handler_apple
+import record_ios
 import share_plus
 import shared_preferences_foundation
 import speech_to_text
@@ -42,6 +43,8 @@ public class GeneratedPluginRegistrant: NSObject {
       with: registry.registrar(forPlugin: "ObjectboxFlutterLibsPlugin")!)
     PermissionHandlerPlugin.register(
       with: registry.registrar(forPlugin: "PermissionHandlerPlugin")!)
+    RecordIosPlugin.register(
+      with: registry.registrar(forPlugin: "RecordIosPlugin")!)
     FPPSharePlusPlugin.register(
       with: registry.registrar(forPlugin: "FPPSharePlusPlugin")!)
     SharedPreferencesPlugin.register(

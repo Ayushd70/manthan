@@ -153,9 +153,11 @@ class EngineController extends Notifier<EngineRuntimeState> {
 
     final model = modelId == null ? null : ModelCatalog.byId(modelId);
 
-    // Fall back to the always-available mock engine when no real model is
-    // selected, or the selected file is not present on disk.
-    if (model == null || model.engineKind == EngineKind.mock) {
+    // Fall back to the always-available mock engine when no real chat model
+    // is selected. Whisper entries are STT-only and never load as an LLM.
+    if (model == null ||
+        model.engineKind == EngineKind.mock ||
+        model.engineKind == EngineKind.whisper) {
       await _loadMock(config: config, token: token);
       return;
     }

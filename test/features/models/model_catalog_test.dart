@@ -22,14 +22,29 @@ void main() {
       expect(ModelCatalog.managed, contains(ModelCatalog.embedding));
     });
 
-    test('byId resolves catalog and embedding models', () {
+    test('byId resolves catalog, embedding, and whisper models', () {
       final first = ModelCatalog.all.first;
       expect(ModelCatalog.byId(first.id), first);
       expect(
         ModelCatalog.byId(ModelCatalog.embedding.id),
         ModelCatalog.embedding,
       );
+      expect(
+        ModelCatalog.byId(ModelCatalog.whisperTiny.id),
+        ModelCatalog.whisperTiny,
+      );
       expect(ModelCatalog.byId('does-not-exist'), isNull);
+    });
+
+    test('managed includes embedding and whisper models', () {
+      expect(ModelCatalog.managed, contains(ModelCatalog.embedding));
+      expect(ModelCatalog.managed, contains(ModelCatalog.whisperTiny));
+      expect(ModelCatalog.managed, contains(ModelCatalog.whisperBase));
+      expect(ModelCatalog.isWhisper(ModelCatalog.whisperTiny.id), isTrue);
+      expect(ModelCatalog.isWhisper(ModelCatalog.all.first.id), isFalse);
+      expect(ModelCatalog.all, isNot(contains(ModelCatalog.whisperTiny)));
+      final managedIds = ModelCatalog.managed.map((m) => m.id).toSet();
+      expect(managedIds.length, ModelCatalog.managed.length);
     });
 
     test('starter model resolves from the chat catalog', () {

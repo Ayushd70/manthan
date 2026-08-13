@@ -115,8 +115,51 @@ abstract final class ModelCatalog {
     ],
   );
 
-  /// Every model the download manager tracks (chat + embedding).
-  static List<ModelInfo> get managed => <ModelInfo>[...all, embedding];
+  /// Default Whisper.cpp model for fully offline dictation (tiny, multilingual).
+  static const ModelInfo whisperTiny = ModelInfo(
+    id: 'whisper-tiny',
+    name: 'Whisper Tiny',
+    description:
+        'Fully offline speech-to-text. Tiny is fast enough for live dictation '
+        'on phones and understands 99 languages.',
+    sizeBytes: 75 * 1024 * 1024,
+    downloadUrl:
+        'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
+    fileName: 'ggml-tiny.bin',
+    engineKind: EngineKind.whisper,
+    fileFormat: ModelFileFormat.ggml,
+    parameterLabel: 'Tiny',
+    quantization: 'GGML',
+    license: 'MIT',
+  );
+
+  /// Higher-quality Whisper.cpp model for more accurate dictation.
+  static const ModelInfo whisperBase = ModelInfo(
+    id: 'whisper-base',
+    name: 'Whisper Base',
+    description:
+        'More accurate offline speech-to-text than Tiny, still small enough '
+        'for on-device live dictation.',
+    sizeBytes: 142 * 1024 * 1024,
+    downloadUrl:
+        'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
+    fileName: 'ggml-base.bin',
+    engineKind: EngineKind.whisper,
+    fileFormat: ModelFileFormat.ggml,
+    parameterLabel: 'Base',
+    quantization: 'GGML',
+    license: 'MIT',
+  );
+
+  /// Whisper.cpp models the download manager tracks for speech-to-text.
+  static const List<ModelInfo> whisper = <ModelInfo>[whisperTiny, whisperBase];
+
+  /// Every model the download manager tracks (chat + embedding + STT).
+  static List<ModelInfo> get managed => <ModelInfo>[
+    ...all,
+    embedding,
+    ...whisper,
+  ];
 
   /// Suggested starter chat model for first-run onboarding.
   static const String starterModelId = 'gemma3-1b-it-int4';
@@ -130,6 +173,12 @@ abstract final class ModelCatalog {
       if (m.id == id) return m;
     }
     if (embedding.id == id) return embedding;
+    for (final m in whisper) {
+      if (m.id == id) return m;
+    }
     return null;
   }
+
+  /// Whether [id] is a Whisper.cpp speech-to-text catalog entry.
+  static bool isWhisper(String id) => whisper.any((m) => m.id == id);
 }

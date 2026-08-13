@@ -7,7 +7,7 @@ import 'package:manthan/features/inference/domain/engine_kind.dart';
 enum GemmaModelFamily { gemmaIt, deepSeek, qwen, qwen3, llama, phi, general }
 
 /// On-disk model container format.
-enum ModelFileFormat { task, litertlm, binary, gguf }
+enum ModelFileFormat { task, litertlm, binary, gguf, ggml }
 
 /// Which platforms require a companion file alongside the primary model.
 enum ModelSidecarScope {

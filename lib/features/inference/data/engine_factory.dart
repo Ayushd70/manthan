@@ -30,6 +30,10 @@ abstract final class EngineFactory {
           displayName: model.name,
           promptFormat: _promptFormat(model.family),
         );
+      case EngineKind.whisper:
+        throw UnsupportedError(
+          'Whisper models are speech-to-text, not chat engines.',
+        );
     }
   }
 
@@ -54,6 +58,7 @@ abstract final class EngineFactory {
       ModelFileFormat.litertlm => fg.ModelFileType.litertlm,
       ModelFileFormat.binary => fg.ModelFileType.binary,
       ModelFileFormat.gguf => fg.ModelFileType.binary,
+      ModelFileFormat.ggml => fg.ModelFileType.binary,
     };
   }
 

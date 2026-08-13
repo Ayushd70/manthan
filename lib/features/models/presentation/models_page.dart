@@ -8,6 +8,7 @@ import 'package:manthan/features/models/domain/model_download.dart';
 import 'package:manthan/features/models/domain/model_info.dart';
 import 'package:manthan/features/rag/application/rag_controller.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
+import 'package:manthan/features/voice/domain/stt_backend.dart';
 
 /// Catalog of on-device models with download and activation controls.
 class ModelsPage extends ConsumerWidget {
@@ -18,6 +19,9 @@ class ModelsPage extends ConsumerWidget {
     final downloads = ref.watch(modelsControllerProvider);
     final activeModelId = ref.watch(
       settingsProvider.select((s) => s.activeModelId),
+    );
+    final whisperModelId = ref.watch(
+      settingsProvider.select((s) => s.whisperModelId),
     );
 
     return Scaffold(
@@ -42,6 +46,18 @@ class ModelsPage extends ConsumerWidget {
               model: model,
               download: downloads[model.id] ?? ModelDownload(modelId: model.id),
               isActive: activeModelId == model.id,
+            ),
+          const SizedBox(height: 16),
+          Text(
+            'Voice dictation',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          for (final model in ModelCatalog.whisper)
+            _WhisperTile(
+              model: model,
+              download: downloads[model.id] ?? ModelDownload(modelId: model.id),
+              isActive: whisperModelId == model.id,
             ),
           const SizedBox(height: 16),
           Text(
@@ -433,6 +449,182 @@ class _EmbeddingActions extends StatelessWidget {
         content: const Text(
           'Semantic search will fall back to mock vectors until you '
           'download the model again.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) await controller.delete(model);
+  }
+}
+
+/// Whisper.cpp model tile — download/delete plus "use for dictation".
+class _WhisperTile extends ConsumerWidget {
+  const _WhisperTile({
+    required this.model,
+    required this.download,
+    required this.isActive,
+  });
+
+  final ModelInfo model;
+  final ModelDownload download;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final controller = ref.read(modelsControllerProvider.notifier);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(model.name, style: theme.textTheme.titleMedium),
+                ),
+                if (isActive)
+                  Chip(
+                    label: const Text('Dictation'),
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: <Widget>[
+                _Tag(model.engineKind.label),
+                if (model.parameterLabel.isNotEmpty) _Tag(model.parameterLabel),
+                _Tag(Formatters.bytes(model.sizeBytes)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(model.description, style: theme.textTheme.bodySmall),
+            const SizedBox(height: 12),
+            _WhisperActions(
+              model: model,
+              download: download,
+              isActive: isActive,
+              controller: controller,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WhisperActions extends ConsumerWidget {
+  const _WhisperActions({
+    required this.model,
+    required this.download,
+    required this.isActive,
+    required this.controller,
+  });
+
+  final ModelInfo model;
+  final ModelDownload download;
+  final bool isActive;
+  final ModelsController controller;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    switch (download.status) {
+      case ModelDownloadStatus.downloading:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            LinearProgressIndicator(value: download.progress),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => controller.cancel(model.id),
+                icon: const Icon(Icons.close),
+                label: const Text('Cancel'),
+              ),
+            ),
+          ],
+        );
+      case ModelDownloadStatus.downloaded:
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            TextButton.icon(
+              onPressed: () => _confirmDelete(context),
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Delete'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: isActive ? null : () => _activate(ref),
+              icon: const Icon(Icons.mic),
+              label: Text(isActive ? 'In use' : 'Use'),
+            ),
+          ],
+        );
+      case ModelDownloadStatus.failed:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              download.error ?? 'Download failed',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.tonalIcon(
+                onPressed: () => controller.download(model),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ),
+          ],
+        );
+      case ModelDownloadStatus.notDownloaded:
+        return Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton.icon(
+            onPressed: () => controller.download(model),
+            icon: const Icon(Icons.download),
+            label: const Text('Download'),
+          ),
+        );
+    }
+  }
+
+  Future<void> _activate(WidgetRef ref) async {
+    final settings = ref.read(settingsProvider.notifier);
+    await settings.setWhisperModelId(model.id);
+    await settings.setSttBackend(SttBackend.whisper);
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete ${model.name}?'),
+        content: const Text(
+          'Offline dictation will need another Whisper model, or the '
+          'platform recognizer, until you download this again.',
         ),
         actions: <Widget>[
           TextButton(

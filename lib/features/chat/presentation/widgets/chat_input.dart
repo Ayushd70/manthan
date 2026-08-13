@@ -91,6 +91,12 @@ class _ChatInputState extends ConsumerState<ChatInput> {
           offset: next.transcript.length,
         );
       }
+      final error = next.error;
+      if (error != null && error.isNotEmpty && previous?.error != error) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
+      }
     });
     final isListening = ref.watch(
       voiceControllerProvider.select((s) => s.isListening),

@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Manthan uses the microphone for on-device voice dictation. Audio is processed on your device and never uploaded.</string>
 </dict>
 </plist>

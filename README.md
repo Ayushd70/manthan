@@ -71,7 +71,7 @@ generated on the device in your hand_.
 | **Model manager**        | Resumable downloads with progress, checksum verification, storage usage, one-tap activate/delete                       |
 | **Multimodal**           | Attach images and ask questions about them (vision models)                                                             |
 | **On-device RAG**        | Import notes/text → chunk → embed → ObjectBox HNSW search → grounded answers **with citations**                        |
-| **Voice input**          | On-device speech-to-text dictation                                                                                     |
+| **Voice input**          | On-device dictation: platform recognizer **or** fully offline **Whisper.cpp** (download Tiny/Base on Models) |
 | **Voice output**         | Read answers aloud (per-message or auto-speak after replies)                                                           |
 | **Personalization**      | Material 3 + dynamic color, light/dark, adjustable temperature/top-k/top-p/max-tokens/system prompt                    |
 | **History**              | Conversations persisted locally; rename, delete, and **share/export** as Markdown                                      |
@@ -121,7 +121,7 @@ lib/
     inference/         Engine abstraction + Gemma / llama.cpp / mock adapters
     models/            Catalog, resumable downloads, storage
     rag/               Chunking, embeddings, vector search, retrieval
-    voice/             On-device speech-to-text (swappable)
+  voice/             On-device STT (platform or Whisper.cpp) + TTS
     settings/          Appearance, generation params, tokens
     home/              Adaptive navigation shell
 ```
@@ -229,13 +229,12 @@ format + analyze + tests plus Android & desktop builds.
 - [x] On-device RAG with ObjectBox HNSW + citations
 - [x] Voice input (speech-to-text)
 - [x] Text-to-speech (read answers aloud)
-- [ ] PDF / DOCX document import
-- [ ] Whisper.cpp STT backend (fully offline transcription)
-- [ ] Text-to-speech (read answers aloud)
-- [ ] Per-conversation model pinning & presets
-- [ ] Function calling / tools
-- [ ] Prompt library & saved system prompts
-- [ ] Encrypted-at-rest storage for chats & documents
+- [x] PDF / DOCX document import
+- [x] Whisper.cpp STT backend (fully offline transcription)
+- [x] Per-conversation model pinning & presets
+- [x] Function calling / tools
+- [x] Prompt library & saved system prompts
+- [x] Encrypted-at-rest storage for chats & documents
 
 See the detailed [roadmap](docs/ROADMAP.md) and
 [open issues](https://github.com/Ayushd70/manthan/issues) for the latest.

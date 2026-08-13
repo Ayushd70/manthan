@@ -84,6 +84,9 @@ class ModelsController extends Notifier<Map<String, ModelDownload>> {
     if (settings.activeModelId == model.id) {
       await ref.read(settingsProvider.notifier).setActiveModel(null);
     }
+    if (settings.whisperModelId == model.id) {
+      await ref.read(settingsProvider.notifier).setWhisperModelId(null);
+    }
     _set(
       ModelDownload(
         modelId: model.id,

@@ -20,6 +20,7 @@ class SettingsController extends Notifier<AppSettings> {
   static const _kOnboardingDone = 'settings.hasCompletedOnboarding';
   static const _kToolsEnabled = 'settings.toolsEnabled';
   static const _kSttBackend = 'settings.sttBackend';
+  static const _kWhisperModel = 'settings.whisperModelId';
   static const _kTemperature = 'settings.temperature';
   static const _kTopK = 'settings.topK';
   static const _kTopP = 'settings.topP';
@@ -49,6 +50,7 @@ class SettingsController extends Notifier<AppSettings> {
       hasCompletedOnboarding: _prefs.getBool(_kOnboardingDone) ?? false,
       toolsEnabled: _prefs.getBool(_kToolsEnabled) ?? true,
       sttBackend: SttBackend.values[_prefs.getInt(_kSttBackend) ?? 0],
+      whisperModelId: _prefs.getString(_kWhisperModel),
       generationConfig: GenerationConfig(
         temperature: _prefs.getDouble(_kTemperature) ?? 0.8,
         topK: _prefs.getInt(_kTopK) ?? 40,
@@ -118,6 +120,16 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> setSttBackend(SttBackend backend) async {
     state = state.copyWith(sttBackend: backend);
     await _prefs.setInt(_kSttBackend, backend.index);
+  }
+
+  /// Pins which Whisper.cpp catalog model to use for offline dictation.
+  Future<void> setWhisperModelId(String? modelId) async {
+    state = state.copyWith(whisperModelId: () => modelId);
+    if (modelId == null) {
+      await _prefs.remove(_kWhisperModel);
+    } else {
+      await _prefs.setString(_kWhisperModel, modelId);
+    }
   }
 
   /// Sets (or clears with null) the active model id.

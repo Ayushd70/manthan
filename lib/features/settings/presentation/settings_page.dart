@@ -7,6 +7,9 @@ import 'package:manthan/app/router.dart';
 import 'package:manthan/core/constants/app_info.dart';
 import 'package:manthan/features/inference/application/engine_controller.dart';
 import 'package:manthan/features/inference/domain/generation_config.dart';
+import 'package:manthan/features/models/application/models_controller.dart';
+import 'package:manthan/features/models/domain/model_catalog.dart';
+import 'package:manthan/features/models/domain/model_download.dart';
 import 'package:manthan/features/settings/application/settings_controller.dart';
 import 'package:manthan/features/voice/domain/stt_backend.dart';
 import 'package:manthan/shared/widgets/labeled_slider.dart';
@@ -70,11 +73,7 @@ class SettingsPage extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.mic_none_outlined),
             title: const Text('Speech-to-text'),
-            subtitle: Text(
-              settings.sttBackend == SttBackend.whisper
-                  ? 'Whisper (offline — coming soon)'
-                  : 'Platform recognizer',
-            ),
+            subtitle: Text(_sttSubtitle(ref, settings.sttBackend)),
             trailing: DropdownButton<SttBackend>(
               value: settings.sttBackend,
               underline: const SizedBox.shrink(),
@@ -174,6 +173,16 @@ class SettingsPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _sttSubtitle(WidgetRef ref, SttBackend backend) {
+  if (backend != SttBackend.whisper) return 'Platform recognizer';
+  final downloads = ref.watch(modelsControllerProvider);
+  final anyReady = ModelCatalog.whisper.any(
+    (m) => downloads[m.id]?.status == ModelDownloadStatus.downloaded,
+  );
+  if (anyReady) return 'Whisper.cpp (fully offline)';
+  return 'Whisper.cpp — download a model on Models';
 }
 
 class _GenerationControls extends StatelessWidget {

@@ -87,5 +87,21 @@ void main() {
       expect(await store.read('manthan.hfToken'), 'hf_legacy');
       expect(prefs.getString('settings.hfToken'), isNull);
     });
+
+    test('persists whisper model id', () async {
+      await container
+          .read(settingsProvider.notifier)
+          .setWhisperModelId('whisper-tiny');
+
+      expect(container.read(settingsProvider).whisperModelId, 'whisper-tiny');
+      expect(
+        container
+            .read(sharedPreferencesProvider)
+            .getString(
+              'settings.whisperModelId',
+            ),
+        'whisper-tiny',
+      );
+    });
   });
 }

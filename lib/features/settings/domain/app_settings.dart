@@ -15,6 +15,7 @@ class AppSettings extends Equatable {
     this.hasCompletedOnboarding = false,
     this.toolsEnabled = true,
     this.sttBackend = SttBackend.platform,
+    this.whisperModelId,
   });
 
   /// Light / dark / system theme.
@@ -44,6 +45,9 @@ class AppSettings extends Equatable {
   /// Speech-to-text backend used by the chat mic.
   final SttBackend sttBackend;
 
+  /// Catalog id of the Whisper.cpp model used for offline dictation.
+  final String? whisperModelId;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     String? Function()? activeModelId,
@@ -54,6 +58,7 @@ class AppSettings extends Equatable {
     bool? hasCompletedOnboarding,
     bool? toolsEnabled,
     SttBackend? sttBackend,
+    String? Function()? whisperModelId,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -70,6 +75,9 @@ class AppSettings extends Equatable {
           hasCompletedOnboarding ?? this.hasCompletedOnboarding,
       toolsEnabled: toolsEnabled ?? this.toolsEnabled,
       sttBackend: sttBackend ?? this.sttBackend,
+      whisperModelId: whisperModelId != null
+          ? whisperModelId()
+          : this.whisperModelId,
     );
   }
 
@@ -84,5 +92,6 @@ class AppSettings extends Equatable {
     hasCompletedOnboarding,
     toolsEnabled,
     sttBackend,
+    whisperModelId,
   ];
 }

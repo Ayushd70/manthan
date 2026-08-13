@@ -3,6 +3,6 @@ enum SttBackend {
   /// OS speech recognizer via `speech_to_text` (default).
   platform,
 
-  /// Fully offline Whisper.cpp backend (stub until a model is shipped).
+  /// Fully offline Whisper.cpp backend (requires a downloaded ggml model).
   whisper,
 }

@@ -8,7 +8,9 @@ plugins {
 android {
     namespace = "dev.ayushd70.manthan"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // whisper_ggml requires NDK 29; other plugins ask for 27. Use the highest
+    // (backward compatible) so Gradle does not mix side-by-side NDKs.
+    ndkVersion = "29.0.13113456"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

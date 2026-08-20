@@ -230,7 +230,7 @@ format + analyze + tests plus Android & desktop builds.
 - [x] Voice input (speech-to-text)
 - [x] Text-to-speech (read answers aloud)
 - [x] PDF / DOCX document import
-- [x] Whisper.cpp STT backend (fully offline transcription)
+- [x] Whisper.cpp STT backend (fully offline transcription, Tiny–Medium)
 - [x] Per-conversation model pinning & presets
 - [x] Function calling / tools
 - [x] Prompt library & saved system prompts

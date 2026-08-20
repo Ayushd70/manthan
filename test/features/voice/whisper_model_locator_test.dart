@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:manthan/features/models/data/model_storage.dart';
 import 'package:manthan/features/models/domain/model_catalog.dart';
+import 'package:manthan/features/models/domain/model_info.dart';
 import 'package:manthan/features/voice/data/whisper_model_locator.dart';
 
 void main() {
@@ -58,4 +59,35 @@ void main() {
     );
     expect(resolved, ModelCatalog.whisperTiny);
   });
+
+  test('prefers Tiny over Small and Medium when nothing is pinned', () async {
+    final stub = WhisperModelLocator(
+      _ReadyIdsStorage({
+        ModelCatalog.whisperTiny.id,
+        ModelCatalog.whisperSmall.id,
+        ModelCatalog.whisperMedium.id,
+      }),
+    );
+    expect(await stub.resolve(), ModelCatalog.whisperTiny);
+  });
+
+  test('uses Small when it is the only downloaded Whisper model', () async {
+    final stub = WhisperModelLocator(
+      _ReadyIdsStorage({ModelCatalog.whisperSmall.id}),
+    );
+    expect(await stub.resolve(), ModelCatalog.whisperSmall);
+  });
+}
+
+class _ReadyIdsStorage extends ModelStorage {
+  _ReadyIdsStorage(this._readyIds);
+
+  final Set<String> _readyIds;
+
+  @override
+  Future<bool> isDownloaded(ModelInfo model) async =>
+      _readyIds.contains(model.id);
+
+  @override
+  Future<String> pathFor(ModelInfo model) async => '/models/${model.fileName}';
 }

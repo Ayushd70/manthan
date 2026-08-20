@@ -11,7 +11,7 @@ class WhisperModelLocator {
   /// Path of the preferred downloaded model, or null if none is on disk.
   ///
   /// Prefers [preferredId] when that file is present, otherwise the first
-  /// downloaded catalog Whisper model (Tiny, then Base).
+  /// downloaded catalog Whisper model (Tiny, then Base, Small, Medium).
   Future<String?> pathFor({String? preferredId}) async {
     final model = await resolve(preferredId: preferredId);
     if (model == null) return null;

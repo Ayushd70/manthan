@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:manthan/features/inference/domain/engine_kind.dart';
 import 'package:manthan/features/models/domain/model_catalog.dart';
 import 'package:manthan/features/models/domain/model_download.dart';
+import 'package:manthan/features/models/domain/model_info.dart';
 
 void main() {
   group('ModelCatalog', () {
@@ -33,6 +34,14 @@ void main() {
         ModelCatalog.byId(ModelCatalog.whisperTiny.id),
         ModelCatalog.whisperTiny,
       );
+      expect(
+        ModelCatalog.byId(ModelCatalog.whisperSmall.id),
+        ModelCatalog.whisperSmall,
+      );
+      expect(
+        ModelCatalog.byId(ModelCatalog.whisperMedium.id),
+        ModelCatalog.whisperMedium,
+      );
       expect(ModelCatalog.byId('does-not-exist'), isNull);
     });
 
@@ -40,9 +49,21 @@ void main() {
       expect(ModelCatalog.managed, contains(ModelCatalog.embedding));
       expect(ModelCatalog.managed, contains(ModelCatalog.whisperTiny));
       expect(ModelCatalog.managed, contains(ModelCatalog.whisperBase));
+      expect(ModelCatalog.managed, contains(ModelCatalog.whisperSmall));
+      expect(ModelCatalog.managed, contains(ModelCatalog.whisperMedium));
       expect(ModelCatalog.isWhisper(ModelCatalog.whisperTiny.id), isTrue);
+      expect(ModelCatalog.isWhisper(ModelCatalog.whisperMedium.id), isTrue);
       expect(ModelCatalog.isWhisper(ModelCatalog.all.first.id), isFalse);
       expect(ModelCatalog.all, isNot(contains(ModelCatalog.whisperTiny)));
+      expect(
+        ModelCatalog.whisper,
+        <ModelInfo>[
+          ModelCatalog.whisperTiny,
+          ModelCatalog.whisperBase,
+          ModelCatalog.whisperSmall,
+          ModelCatalog.whisperMedium,
+        ],
+      );
       final managedIds = ModelCatalog.managed.map((m) => m.id).toSet();
       expect(managedIds.length, ModelCatalog.managed.length);
     });

@@ -20,7 +20,7 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - [x] Encrypted-at-rest storage for chats & documents
 - [x] Golden tests for core chat bubbles
 - [x] CI (analyze + test + Android/desktop builds) and release workflow
-- [x] Whisper.cpp STT (live dictation with Tiny/Base ggml downloads)
+- [x] Whisper.cpp STT (live dictation with Tiny/Base/Small/Medium ggml downloads)
 
 ## Next sprint (priority order)
 
@@ -76,12 +76,12 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 ### 10. Whisper STT seam — shipped
 - [x] `SttBackend` setting + `WhisperSpeechRecognizer` behind
       `speechRecognizerProvider`
-- [x] Whisper Tiny / Base in `ModelCatalog` with download UX on Models
+- [x] Whisper Tiny / Base / Small / Medium in `ModelCatalog` with download UX on Models
 - [x] Live `whisper_ggml` transcription (16 kHz PCM via `record`)
 
 ## Backlog
 
-- [ ] Larger Whisper models (small / medium) if Tiny/Base are not enough
+_No open items._
 
 ## Working notes
 

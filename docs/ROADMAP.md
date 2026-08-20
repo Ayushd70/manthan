@@ -88,7 +88,7 @@ Living plan for what's next. Status reflects `main` at the time of writing.
 - Project root: `Ayushd70/manthan`. Architecture is feature-first
   (`domain` / `data` / `application` / `presentation`); the `LlmEngine` and
   `EmbeddingEngine` interfaces are the extension seams — add backends there.
-- Toolchain is pinned to **Flutter 3.41.6** in CI; format with the matching
+- Toolchain is pinned to **Flutter 3.47.0** in CI; format with the matching
   `dart format` before pushing. If bumping Flutter, update the CI pins and
   re-run `dart format` once.
 - Screenshots/GIF are generated via the `MANTHAN_DEMO` dart-define seed

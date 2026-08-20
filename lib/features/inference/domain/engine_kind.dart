@@ -16,8 +16,7 @@ enum EngineKind {
 
   /// whisper.cpp via `whisper_ggml` (`.bin` ggml) for fully offline
   /// speech-to-text.
-  whisper
-  ;
+  whisper;
 
   /// Short human label.
   String get label => switch (this) {

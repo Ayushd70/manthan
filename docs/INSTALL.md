@@ -34,7 +34,7 @@ See the main [README](../README.md#getting-started) for Flutter setup. Minimum t
 
 - **Android:** API 26+
 - **iOS:** 16.0+ (requires Xcode and CocoaPods)
-- **macOS:** 11.0+
+- **macOS:** 12.0+
 - **Windows / Linux:** supported for development; mobile is the primary experience
 
 ## iOS

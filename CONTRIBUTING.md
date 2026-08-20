@@ -4,6 +4,8 @@ Thanks for your interest in improving Manthan! This document covers the basics.
 
 ## Getting started
 
+Requires **Flutter 3.47+** (Dart 3.13+).
+
 ```bash
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs

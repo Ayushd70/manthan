@@ -11,7 +11,7 @@ with your voice. **100% on-device.** Switch on airplane mode and everything stil
 
 [![Release](https://img.shields.io/github/v/release/Ayushd70/manthan?include_prereleases&label=release)](https://github.com/Ayushd70/manthan/releases/latest)
 [![CI](https://github.com/Ayushd70/manthan/actions/workflows/ci.yaml/badge.svg)](https://github.com/Ayushd70/manthan/actions/workflows/ci.yaml)
-[![Flutter](https://img.shields.io/badge/Flutter-3.41%2B-02569B?logo=flutter)](https://flutter.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.47%2B-02569B?logo=flutter)](https://flutter.dev)
 [![Platforms](https://img.shields.io/badge/platforms-Android%20%C2%B7%20iOS%20%C2%B7%20macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-success)](#-platforms)
 [![Inference](https://img.shields.io/badge/inference-100%25%20on--device-brightgreen)](#-why-manthan)
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
@@ -132,7 +132,7 @@ Each feature is split into `domain` (pure entities + interfaces), `data`
 
 ## 🚀 Getting started
 
-**Requirements:** Flutter `3.41+`, Dart `3.11+`. For iOS, **iOS 16+**
+**Requirements:** Flutter `3.47+`, Dart `3.13+`. For iOS, **iOS 16+**
 (required by `flutter_gemma` / MediaPipe).
 
 ```bash

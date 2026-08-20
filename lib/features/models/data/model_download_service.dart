@@ -11,9 +11,8 @@ import 'package:manthan/features/models/domain/model_info.dart';
 /// Resumption is implemented with HTTP range requests against a `.part` file,
 /// so an interrupted multi-gigabyte download continues instead of restarting.
 class ModelDownloadService {
-  ModelDownloadService({required ModelStorage storage, Dio? dio})
-    : _storage = storage,
-      _dio = dio ?? Dio();
+  ModelDownloadService({required this._storage, Dio? dio})
+    : _dio = dio ?? Dio();
 
   final ModelStorage _storage;
   final Dio _dio;

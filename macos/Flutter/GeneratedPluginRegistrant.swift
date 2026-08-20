@@ -7,7 +7,7 @@ import Foundation
 
 import dynamic_color
 import ffmpeg_kit_flutter_new_min
-import file_picker
+import file_picker_darwin
 import flutter_gemma
 import flutter_secure_storage_darwin
 import flutter_tts

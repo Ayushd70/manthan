@@ -7,9 +7,8 @@ import 'package:manthan/objectbox.g.dart';
 class PromptRepository {
   PromptRepository(
     Store store, {
-    FieldCipher cipher = const PassthroughFieldCipher(),
-  }) : _prompts = store.box<SavedPromptEntity>(),
-       _cipher = cipher;
+    this._cipher = const PassthroughFieldCipher(),
+  }) : _prompts = store.box<SavedPromptEntity>();
 
   final Box<SavedPromptEntity> _prompts;
   final FieldCipher _cipher;

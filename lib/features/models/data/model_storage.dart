@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 /// Owns the on-disk location of downloaded model files and integrity checks.
 class ModelStorage {
-  ModelStorage({Directory? overrideDir}) : _overrideDir = overrideDir;
+  ModelStorage({this._overrideDir});
 
   final Directory? _overrideDir;
   Directory? _cached;

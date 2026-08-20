@@ -11,10 +11,9 @@ import 'package:manthan/objectbox.g.dart';
 class ChatRepository {
   ChatRepository(
     Store store, {
-    FieldCipher cipher = const PassthroughFieldCipher(),
+    this._cipher = const PassthroughFieldCipher(),
   }) : _sessions = store.box<ChatSessionEntity>(),
-       _messages = store.box<ChatMessageEntity>(),
-       _cipher = cipher;
+       _messages = store.box<ChatMessageEntity>();
 
   final Box<ChatSessionEntity> _sessions;
   final Box<ChatMessageEntity> _messages;

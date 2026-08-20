@@ -19,10 +19,9 @@ class EmbeddedChunk {
 class DocumentRepository {
   DocumentRepository(
     Store store, {
-    FieldCipher cipher = const PassthroughFieldCipher(),
+    this._cipher = const PassthroughFieldCipher(),
   }) : _documents = store.box<DocumentEntity>(),
-       _chunks = store.box<DocumentChunkEntity>(),
-       _cipher = cipher;
+       _chunks = store.box<DocumentChunkEntity>();
 
   final Box<DocumentEntity> _documents;
   final Box<DocumentChunkEntity> _chunks;

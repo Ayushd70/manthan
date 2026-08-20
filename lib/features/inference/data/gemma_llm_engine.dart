@@ -12,12 +12,11 @@ import 'package:manthan/features/inference/domain/llm_engine.dart';
 class GemmaLlmEngine implements LlmEngine {
   GemmaLlmEngine({
     required this.displayName,
-    required fg.ModelType modelType,
-    required fg.ModelFileType fileType,
+    required this._modelType,
+    required this._fileType,
     this.supportsVision = false,
     this.isThinkingModel = false,
-  }) : _modelType = modelType,
-       _fileType = fileType;
+  });
 
   /// Label shown in the UI (engine + model).
   final String displayName;

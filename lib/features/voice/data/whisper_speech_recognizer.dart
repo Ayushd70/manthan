@@ -16,12 +16,10 @@ typedef WhisperModelPathResolver = Future<String?> Function();
 /// on disk so the UI can fall back gracefully.
 class WhisperSpeechRecognizer implements SpeechRecognizer {
   WhisperSpeechRecognizer({
-    WhisperModelPathResolver? resolveModelPath,
-    PcmAudioSource? audioSource,
-    WhisperTranscriber? transcriber,
-  }) : _resolveModelPath = resolveModelPath,
-       _audioSource = audioSource,
-       _transcriber = transcriber;
+    this._resolveModelPath,
+    this._audioSource,
+    this._transcriber,
+  });
 
   final WhisperModelPathResolver? _resolveModelPath;
   PcmAudioSource? _audioSource;
